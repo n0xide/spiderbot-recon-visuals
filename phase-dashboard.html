@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>phases · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .phase-card { border-left-width: 3px; border-left-style: solid; }
+  .phase-card.p0 { border-left-color: #9aa6b5; }
+  .phase-card.p1 { border-left-color: #C45A1F; }
+  .phase-card.p2 { border-left-color: #5a90c8; }
+  .phase-card.p3 { border-left-color: #8a78d0; }
+  .phase-card.p4 { border-left-color: #d04a8a; }
+  .phase-card.p5 { border-left-color: #5fa84a; }
+
+  .progress-bar { position: relative; height: 6px; background: var(--bg-elev); border-radius: 2px; overflow: hidden; }
+  .progress-bar > span { display: block; height: 100%; background: var(--amber); transition: width 0.2s; }
+
+  .gate {
+    margin: 32px 0;
+    padding: 14px 18px;
+    background: var(--bg-elev);
+    border: 1px dashed var(--border-hi);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+  .gate .gate-tag {
+    color: var(--amber);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 12px;
+  }
+
+  .phase-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+  .phase-head h2 { border: none; padding: 0; margin: 0; font-size: 18px; }
+  .phase-head .meta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  .build-list { font-size: 13px; color: var(--text-mute); padding-left: 18px; margin: 8px 0 16px; }
+  .build-list li { margin: 4px 0; }
+
+  details summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--chrome);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 0;
+    user-select: none;
+  }
+  details summary:hover { color: var(--amber); }
+  details[open] summary { color: var(--amber); }
+</style>
+</head>
+<body data-ns="phases">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ phase dashboard</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html" class="active">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <!-- Overall rollup -->
+  <section class="grid grid-4 mt-2">
+    <div class="stat" data-rollup="input[data-phase='p0']">
+      <span class="label">P0 · single leg</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase='p1']">
+      <span class="label">P1 · walk</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase='p2']">
+      <span class="label">P2 · see</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase='p3']">
+      <span class="label">P3 · map</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase='p4']">
+      <span class="label">P4 · recon</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase='p5']">
+      <span class="label">P5 · polish</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat" data-rollup="input[data-phase]">
+      <span class="label">Overall</span>
+      <span class="value" data-rollup-value>– / –</span>
+      <div class="progress-bar mt-1"><span data-rollup-bar style="width:0%"></span></div>
+    </div>
+    <div class="stat">
+      <span class="label">Reset</span>
+      <button class="mt-1" data-reset-ns>Clear saved state</button>
+    </div>
+  </section>
+
+  <!-- ========================================================== PHASE 0 -->
+  <section class="card phase-card p0 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p0">P0</span>
+        <h2 class="mt-1">Single leg &amp; control validation</h2>
+        <div class="text-mute small mt-1">Goal: prove the servo bus, IK, IMU, and PA612-CF print workflow on one leg before committing to 21 more servos.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">2–3 weeks</span>
+        <span class="pill amber">cumulative $400</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>1× leg printed in PA612-CF (coxa + femur + tibia + foot) with hollow cable channels (design.md §11.2)</li>
+        <li>3× LX-224HV servos addressed (IDs 0x01–0x03) and bench-mounted</li>
+        <li>Teensy 4.1 with HAL-based bus driver firmware, BNO086 attached</li>
+        <li>Single-leg bench fixture clamping coxa to a fixed plate (testing.md §1)</li>
+        <li>1× GX12 6-pin connector wired to verify modular-leg interface (design.md §11.1)</li>
+        <li><strong>Walk-in-place stand</strong> built — printable or wood (testing.md §1). Do this early.</li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t01"><span class="check-label"><span class="id">T0.1</span>Servo bus comms: 1000 PING round-trips, no missed responses<span class="note">testing.md §3</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t02"><span class="check-label"><span class="id">T0.2</span>Single-servo positioning: ±1° accuracy</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t03"><span class="check-label"><span class="id">T0.3</span>IK round-trip: 20 random targets, all within 1 mm FK round-trip</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t04"><span class="check-label"><span class="id">T0.4</span>Foot circle trace: visible circle, ≥2 Hz cycle</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t05"><span class="check-label"><span class="id">T0.5</span>BNO086 stream: 200 Hz, &lt;1° drift over 5 min</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t06"><span class="check-label"><span class="id">T0.6</span>Stall test: Teensy rail stays 4.8–5.2 V during worst-case servo stall</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-t07"><span class="check-label"><span class="id">T0.7</span>PA612-CF print quality: layer adhesion holds at 5 kg load, deflection &lt;5 mm</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-cal"><span class="check-label"><span class="id">CAL</span>Servo zero offsets recorded, joint limits set, IMU mag-cal completed<span class="note">calibration.md</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-gx12"><span class="check-label"><span class="id">GX12</span>Connector mate/unmate cycle works without binding, leg field-swap &lt;60 s</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-bench"><span class="check-label"><span class="id">BENCH</span>Bench rig extended with <code class="inline">mode_lx224_bus.cpp</code><span class="note">optional but recommended</span></span></label>
+  </section>
+
+  <!-- Gate P0 → P1 -->
+  <div class="gate">
+    <div><span class="gate-tag">Decision gate · P0 → P1</span> all three must clear before ordering P1 BOM ($2,200)</div>
+    <label class="check mt-1"><input type="checkbox" data-persist data-phase="p0" id="p0-gate-slop"><span class="check-label">LX-224HV gear-train slop acceptable (≤2° at femur)<span class="note">else escalate to Dynamixel XL430-W250-T (+$1.8k)</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-gate-print"><span class="check-label">PA612-CF print quality acceptable<span class="note">else pause until wet filament / nozzle wear / envelope is resolved</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p0" id="p0-gate-hal"><span class="check-label">HAL design works — swap LX-224HV impl for Dynamixel stub, gait code compiles unchanged</span></label>
+  </div>
+
+  <!-- ========================================================== PHASE 1 -->
+  <section class="card phase-card p1 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p1">P1</span>
+        <h2 class="mt-1">Walk</h2>
+        <div class="text-mute small mt-1">All 8 legs assembled, three gaits (wave / ripple / tetrapod) demonstrated indoors on flat ground, controlled by joystick.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">4–6 weeks</span>
+        <span class="pill amber">cumulative $2,600</span>
+        <span class="pill danger">LiPo first use — read safety.md §1</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>7 more legs printed and assembled (8 total)</li>
+        <li>Chassis hub printed (2 halves, joined)</li>
+        <li>All 24 servos addressed, bench-validated, mounted</li>
+        <li>6S LiPo + DPS5020 buck + estop + capacitor bank wired</li>
+        <li>Teensy gait state machine + IK runs 24-joint solution at ≥100 Hz</li>
+        <li>INA226 power telemetry on servo + Teensy + Jetson rails</li>
+        <li>Joystick (Xbox controller or 2.4 GHz RC) drives <code class="inline">cmd_body_pose</code> and <code class="inline">cmd_gait</code></li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t11"><span class="check-label"><span class="id">T1.1</span>Robot stands stably without joystick input · servo current &lt;2 A idle</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t12"><span class="check-label"><span class="id">T1.2</span>Body-twist gait: feet planted, body rotates ±20° yaw / ±15° pitch &amp; roll without foot slip</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t13"><span class="check-label"><span class="id">T1.3</span>Wave gait cycles cleanly on walk-in-place stand</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t14"><span class="check-label"><span class="id">T1.4</span>Wave gait walks 1 m straight on floor &lt;90 s, ±5° body orientation</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t15"><span class="check-label"><span class="id">T1.5</span>Ripple &lt;30 s for 1 m · Tetrapod &lt;15 s for 1 m</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t16"><span class="check-label"><span class="id">T1.6</span>Stability margin verification: CoM projection inside support polygon (&gt;30 mm margin)</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t17"><span class="check-label"><span class="id">T1.7</span>Battery runtime ≥30 min walking continuous on one 6S 8000 mAh pack</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t18"><span class="check-label"><span class="id">T1.8</span>Estop cuts servo rail within 50 ms of press</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t19"><span class="check-label"><span class="id">T1.9</span>Self-righting works <span class="note">stretch — can defer to P2</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-t110"><span class="check-label"><span class="id">T1.10</span>Watchdog catches stalled gait, robot enters safe-pose within 200 ms</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-boot"><span class="check-label"><span class="id">BOOT</span>Smart power-up sequence verified — no servo twitches at boot<span class="note">design.md §11.5</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-hotswap"><span class="check-label"><span class="id">HOT-SWAP</span>All 8 legs hot-swappable: pull, plug, robot continues</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-temp"><span class="check-label"><span class="id">TEMP</span>Joint temperatures stay &lt;60 °C in continuous walking</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-magnet"><span class="check-label"><span class="id">MAGNET</span>Magnetic battery latch verified — drop chassis a few cm onto foam pad, battery stays seated</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-cal24"><span class="check-label"><span class="id">CAL ×24</span>All 24 servo zero offsets and joint limits calibrated</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-instr"><span class="check-label"><span class="id">INSTR</span>Educational instrumentation working — joint angle/load/temp ringbuffer<span class="note">design.md §11.11</span></span></label>
+  </section>
+
+  <!-- Gate P1 → P2 -->
+  <div class="gate">
+    <div><span class="gate-tag">Decision gate · P1 → P2</span> confirm before adding $1k of sensors</div>
+    <label class="check mt-1"><input type="checkbox" data-persist data-phase="p1" id="p1-gate-gait"><span class="check-label">Gait fidelity robust enough to add Jetson + sensor weight (~600 g) without re-tuning</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p1" id="p1-gate-mass"><span class="check-label">Chassis carries Jetson + LiDAR + RealSense without exceeding 4.5 kg total / over-temping servos</span></label>
+  </div>
+
+  <!-- ========================================================== PHASE 2 -->
+  <section class="card phase-card p2 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p2">P2</span>
+        <h2 class="mt-1">See</h2>
+        <div class="text-mute small mt-1">Jetson Orin Nano integrated, ROS 2 Humble running, RealSense + IMX477 streaming, body-pose + gait commands flow through ROS 2.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">6–8 weeks</span>
+        <span class="pill amber">cumulative $3,650</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>Jetson Orin Nano mounted with NVMe SSD, Ubuntu 22.04 + JetPack 6.x, ROS 2 Humble</li>
+        <li><code class="inline">spiderbot_ws</code> workspace scaffolded — 7 packages per design.md §8</li>
+        <li>micro-ROS bridge running between Teensy and Jetson at 921 600 baud</li>
+        <li>RealSense D435i → RGB + depth + IMU into ROS 2 topics</li>
+        <li>Arducam IMX477 on 2-DOF MG90S head gimbal, MJPEG stream</li>
+        <li>VL53L1X ×3 (belly + flanks) publishing distance topics</li>
+        <li>Joystick teleop via ROS 2 (<code class="inline">joy_node</code>)</li>
+        <li>URDF in RViz with joint states reflecting real positions</li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-boot"><span class="check-label"><span class="id">BOOT</span>Jetson boots from NVMe to ROS 2 desktop in &lt;60 s</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-t21"><span class="check-label"><span class="id">T2.1</span>Joystick → servo end-to-end latency &lt;100 ms</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-t22"><span class="check-label"><span class="id">T2.2</span>RealSense at 30 fps, no dropped frames over 5 min</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-gimbal"><span class="check-label"><span class="id">GIMBAL</span>Head gimbal tracks manually-commanded pan/tilt · latency &lt;200 ms</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-t24"><span class="check-label"><span class="id">T2.4</span>URDF in RViz matches actual robot (joint signs/mirroring correct)</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-door"><span class="check-label"><span class="id">DOORWAY</span>Joystick drives tetrapod gait through 90 cm doorway via camera stream</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-t23"><span class="check-label"><span class="id">T2.3</span>Jetson Tj &lt;75 °C in dorsal mount under full load</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-cpu"><span class="check-label"><span class="id">CPU</span>Jetson CPU &lt;50% idle, &lt;80% under full sensor + teleop</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-t25"><span class="check-label"><span class="id">T2.5</span>AprilTag detection at 3 m with ±5 cm pose accuracy</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-cdeck"><span class="check-label"><span class="id">CYBERDECK</span>SSH from <code class="inline">fold-p4-pico</code> to Jetson, telemetry visible on cyberdeck display<span class="note">design.md §11.10</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-mass"><span class="check-label"><span class="id">MASS</span>Total robot mass &lt;4.5 kg confirmed</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p2" id="p2-camcal"><span class="check-label"><span class="id">CAL</span>RealSense + Lepton + camera calibration completed<span class="note">calibration.md §5</span></span></label>
+  </section>
+
+  <!-- Gate P2 → P3 -->
+  <div class="gate">
+    <div><span class="gate-tag">Decision gate · P2 → P3</span></div>
+    <label class="check mt-1"><input type="checkbox" data-persist data-phase="p2" id="p2-gate-thermal"><span class="check-label">Jetson thermal envelope (Tj &lt;75 °C under continuous load). If margin tight: active fan or vent carapace.</span></label>
+  </div>
+
+  <!-- ========================================================== PHASE 3 -->
+  <section class="card phase-card p3 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p3">P3</span>
+        <h2 class="mt-1">Map</h2>
+        <div class="text-mute small mt-1">Livox MID-360 integrated, RTAB-Map 3D SLAM working, Nav2 planning paths to commanded waypoints in a known indoor map.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">4–6 weeks</span>
+        <span class="pill amber">cumulative $4,550</span>
+        <span class="pill warn">Livox $899 — big-ticket item</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>Livox MID-360 mounted on dorsal carapace, TPU 95A vibration isolation</li>
+        <li>Livox-ROS2 driver, point cloud topic verified</li>
+        <li>RTAB-Map 3D SLAM building map of the lab</li>
+        <li>Nav2 with custom costmap layers (LiDAR + depth + foot-contact odometry)</li>
+        <li>Custom odometry node — fuses BNO086 + foot contact for <code class="inline">/odom</code> without wheel encoders</li>
+        <li>Map save/load workflow tested</li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-t31"><span class="check-label"><span class="id">T3.1</span>Livox publishes clean 200 kpts/s point cloud at 10 Hz</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-t32"><span class="check-label"><span class="id">T3.2</span>RTAB-Map builds 50 m² room map, re-localizes after reboot</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-t33"><span class="check-label"><span class="id">T3.3</span>Nav2 plans + executes path A → B autonomously</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-t34"><span class="check-label"><span class="id">T3.4</span>Robot re-plans around dynamic obstacle mid-traversal</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-t35"><span class="check-label"><span class="id">T3.5</span>Foot-contact + IMU odometry tracks within 10% drift over 5 m</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-ekf"><span class="check-label"><span class="id">EKF</span>EKF tuning completed<span class="note">calibration.md §11</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-extr"><span class="check-label"><span class="id">EXTR</span>Camera-to-LiDAR extrinsic calibration if needed<span class="note">calibration.md §12</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p3" id="p3-cancel"><span class="check-label"><span class="id">CANCEL</span>Autonomy override: estop or <code class="inline">cancel_goal</code> stops robot within 200 ms</span></label>
+  </section>
+
+  <!-- Gate P3 → P4 -->
+  <div class="gate">
+    <div><span class="gate-tag">Decision gate · P3 → P4</span></div>
+    <label class="check mt-1"><input type="checkbox" data-persist data-phase="p3" id="p3-gate-slam"><span class="check-label">SLAM reliability acceptable. If RTAB-Map struggles in feature-poor environments (long hallways), evaluate LIO-SAM before P4 spend.</span></label>
+  </div>
+
+  <!-- ========================================================== PHASE 4 -->
+  <section class="card phase-card p4 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p4">P4</span>
+        <h2 class="mt-1">Recon</h2>
+        <div class="text-mute small mt-1">Thermal vision, audio DoA, LoRa C2 link, full recon kit online.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">4–6 weeks</span>
+        <span class="pill amber">cumulative $5,200</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>FLIR Lepton 3.5 + PureThermal 2 next to RealSense, thermal stream node</li>
+        <li>MiniDSP UMA-8 mic array on top dorsal corners</li>
+        <li>DoA node (GCC-PHAT or beamforming) publishes sound heading</li>
+        <li>Pico 2 W + RYLR998 LoRa sidecar wired, MicroPython firmware</li>
+        <li>LoRa command protocol defined (JSON-line, shared with cyberdeck)</li>
+        <li>Optional: GPS L86-M33 if outdoor deployment planned</li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-t41"><span class="check-label"><span class="id">T4.1</span>Lepton thermal stream at 9 Hz, overlayable on RGB in RViz</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-t42"><span class="check-label"><span class="id">T4.2</span>DoA node localizes hand-claps to ±15° in horizontal plane</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-t43"><span class="check-label"><span class="id">T4.3</span>LoRa link reliable at 1 km LOS<span class="note">2 km bonus</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-tlm"><span class="check-label"><span class="id">TLM</span>LoRa telemetry: compressed status frame every 1 s</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-doa-aim"><span class="check-label"><span class="id">DoA→AIM</span>Robot autonomously detects sound source, turns body to face it, points head camera at it</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-conf"><span class="check-label"><span class="id">CONF</span>Conformal coating applied to exposed PCBs<span class="note">design.md §11.13</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-gasket"><span class="check-label"><span class="id">GASKET</span>O-rings installed at carapace-to-chassis joints</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-mic"><span class="check-label"><span class="id">MIC-CAL</span>Mic array timing calibration<span class="note">calibration.md §10</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p4" id="p4-field"><span class="check-label"><span class="id">FIELD</span>First field test in cyberdeck pairing — first real mission, even short<span class="note">field-ops.md</span></span></label>
+  </section>
+
+  <!-- Gate P4 → P5 -->
+  <div class="gate">
+    <div><span class="gate-tag">Decision gate · P4 → P5</span> all functional capabilities working — now it's appearance + immersion.</div>
+  </div>
+
+  <!-- ========================================================== PHASE 5 -->
+  <section class="card phase-card p5 mt-4">
+    <div class="phase-head">
+      <div>
+        <span class="phase-badge p5">P5</span>
+        <h2 class="mt-1">Polish</h2>
+        <div class="text-mute small mt-1">Cyberpunk aesthetic finished, documentation video produced, robot is presentation-ready.</div>
+      </div>
+      <div class="meta">
+        <span class="pill">2–3 weeks</span>
+        <span class="pill amber">cumulative $5,400</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Build deliverables</summary>
+      <ul class="build-list">
+        <li>WS2812B RGB strip behind PETG diffuser channels on leg segments</li>
+        <li>8× 8×8 RGB matrix on head gimbal = "eye cluster" (or 1× 16×16)</li>
+        <li>Waveshare 1.69" round IPS HUD on carapace, Teensy-driven</li>
+        <li>MAX98357A I²S amp + speaker for procedural creature SFX + alarms</li>
+        <li>Vinyl wrap accents + mil-spec callout decals</li>
+        <li>Cable braiding + exposed neural-pathway aesthetic</li>
+        <li>90-second build-and-capability documentation video</li>
+      </ul>
+    </details>
+
+    <h3 class="section mt-2">Sign-off criteria</h3>
+
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-t51"><span class="check-label"><span class="id">T5.1</span>RGB strips animate in sync with gait swing phase</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-eye"><span class="check-label"><span class="id">EYE</span>Eye matrix has ≥5 distinct patterns (idle, alert, tracking, alarm, low-battery)</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-t52"><span class="check-label"><span class="id">T5.2</span>HUD shows battery %, gait, sensor status · readable from 2 m</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-sfx"><span class="check-label"><span class="id">SFX</span>≥3 distinct procedural sounds (idle clicks, scan tone, alarm)</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-rail"><span class="check-label"><span class="id">RAIL</span>NATO accessory rail tested with ≥1 bolt-on payload (lifting handle min)</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-t53"><span class="check-label"><span class="id">T5.3</span>Documentation video shot, edited, archived</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-mass"><span class="check-label"><span class="id">MASS</span>Final mass check: &lt;4.5 kg confirmed</span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-mission"><span class="check-label"><span class="id">MISSION</span>Tier-3 mission completed (20+ min outdoor, LoRa C2 from cyberdeck)<span class="note">field-ops.md</span></span></label>
+    <label class="check"><input type="checkbox" data-persist data-phase="p5" id="p5-aar"><span class="check-label"><span class="id">AAR</span>After-Action Review written in <code class="inline">log.md</code></span></label>
+  </section>
+
+  <!-- Cross-cutting -->
+  <h2 class="section">Cross-cutting practices</h2>
+  <div class="card">
+    <ul class="text-mute small" style="margin:8px 0;padding-left:18px">
+      <li><strong>Every session ends with a <code class="inline">log.md</code> entry</strong>: date, attempted, worked, broke, next.</li>
+      <li><strong>No new phase during another's debugging.</strong> If P1 is stuck, do P1 — don't escape into P2.</li>
+      <li><strong>Calipers + scale every print.</strong> Track dimensional accuracy and mass; PA612-CF drifts with filament dryness.</li>
+      <li><strong>Photo log.</strong> Phone photo at every assembly milestone → <code class="inline">../../hardware-documentation/spiderbot-recon-build-photos/</code></li>
+      <li><strong>Concept gaps surface to <code class="inline">../study/</code></strong> — gait math, EKF intuition, ROS 2 lifecycle, write a study note rather than guess-and-check.</li>
+    </ul>
+  </div>
+
+  <!-- Risks -->
+  <h2 class="section">Risk register</h2>
+  <table class="data">
+    <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>PA612-CF print quality inadequate on user's Bambu</td><td><span class="pill warn">medium</span></td><td><span class="pill danger">high</span></td><td>Verify printer + nozzle + dry box at P0 start. Service-bureau fallback for structural parts.</td></tr>
+      <tr><td>LX-224HV gear slop unacceptable for fine gait</td><td><span class="pill warn">medium</span></td><td><span class="pill warn">medium</span></td><td>P0 evaluates before committing 21 more servos. Dynamixel XL430 fallback.</td></tr>
+      <tr><td>Servo rail brownout under dynamic gait</td><td><span class="pill warn">medium</span></td><td><span class="pill danger">high</span></td><td>Capacitor bank 100 mF; test worst-case at P1.</td></tr>
+      <tr><td>Jetson thermal throttling in dorsal mount</td><td><span class="pill warn">medium</span></td><td><span class="pill warn">medium</span></td><td>Active cooling path at P2. Worst case: vent cover or fan.</td></tr>
+      <tr><td>LiDAR + LoRa antenna placement conflict</td><td><span class="pill">low</span></td><td><span class="pill">low</span></td><td>Both on dorsal; verify CAD before fab.</td></tr>
+      <tr><td>Project stalls due to cyberdeck arc</td><td><span class="pill danger">high</span></td><td><span class="pill warn">medium</span></td><td>Phases are independent restart points. Pause at end-of-phase, not mid-phase.</td></tr>
+      <tr><td>Out-of-budget by Phase 4</td><td><span class="pill warn">medium</span></td><td><span class="pill">low</span></td><td>Each phase clean stopping point. P2 alone is a complete project.</td></tr>
+    </tbody>
+  </table>
+
+  <footer class="footer">
+    state persists in browser localStorage · namespace <code class="inline">spiderbot.phases</code>
+  </footer>
+
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

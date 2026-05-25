@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Power architecture · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .pwr-svg { width:100%; height:auto; background:var(--bg-elev); border:1px solid var(--border); border-radius:4px; padding:12px; }
+
+  .sequence-step {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 16px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--border-hi);
+    background: var(--bg-card);
+    margin-bottom: 8px;
+    border-radius: 0 4px 4px 0;
+    align-items: center;
+    transition: all 0.3s;
+  }
+  .sequence-step.active { border-left-color: var(--amber); background: rgba(196,90,31,0.06); }
+  .sequence-step .step-num { font-family: var(--mono); font-size: 28px; font-weight: 700; color: var(--text-dim); text-align: center; }
+  .sequence-step.active .step-num { color: var(--amber); }
+  .sequence-step h3 { margin: 0; font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; }
+  .sequence-step .desc { color: var(--text-mute); font-size: 12px; margin-top: 4px; }
+  .sequence-step .timing { font-family: var(--mono); font-size: 11px; color: var(--amber); white-space: nowrap; }
+
+  .controls { display: flex; gap: 8px; align-items: center; margin: 16px 0; }
+</style>
+</head>
+<body data-ns="power">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ power architecture</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html" class="active">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <div class="banner danger">
+    <span class="banner-tag">Pre-power-on</span>
+    <span>180 kJ in the LiPo (≈40 g TNT). 50 A peak servo rail welds metal. <a href="safety-card.html">Read safety card first.</a></span>
+  </div>
+
+  <!-- Hero stats -->
+  <section class="grid grid-4 mt-3">
+    <div class="stat">
+      <span class="label">Battery</span>
+      <span class="value">6S 22.2 V</span>
+      <span class="delta">Tattu R-Line 8000 mAh · 75C+</span>
+    </div>
+    <div class="stat">
+      <span class="label">Peak servo current</span>
+      <span class="value">~50 A</span>
+      <span class="delta">24× ~2 A typical loaded</span>
+    </div>
+    <div class="stat">
+      <span class="label">Cap bank</span>
+      <span class="value">100 mF</span>
+      <span class="delta">4× 22 mF parallel · low-ESR</span>
+    </div>
+    <div class="stat">
+      <span class="label">Runtime target</span>
+      <span class="value">45 min</span>
+      <span class="delta">walking · 90 min idle</span>
+    </div>
+  </section>
+
+  <!-- Power tree SVG -->
+  <h2 class="section">Power tree</h2>
+  <div class="diagram-frame">
+    <svg class="pwr-svg" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#C45A1F"/>
+        </marker>
+      </defs>
+
+      <!-- Battery -->
+      <g>
+        <rect x="20" y="20" width="180" height="80" rx="4" fill="#1a1d22" stroke="#d04a3a" stroke-width="2"/>
+        <text x="110" y="48" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="#d04a3a" font-weight="700">6S LIPO 22.2V</text>
+        <text x="110" y="66" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#d7dade">8000 mAh · 180 kJ</text>
+        <text x="110" y="84" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#8a8f97">Tattu R-Line 75C+</text>
+      </g>
+
+      <!-- XT60 + XT90-S anti-spark -->
+      <g>
+        <rect x="220" y="32" width="100" height="56" rx="2" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="270" y="56" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#d7dade">XT60</text>
+        <text x="270" y="74" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#C45A1F">+ XT90-S</text>
+      </g>
+      <line x1="200" y1="60" x2="220" y2="60" stroke="#d04a3a" stroke-width="2"/>
+
+      <!-- Estop -->
+      <g>
+        <circle cx="370" cy="60" r="22" fill="#1a1d22" stroke="#d04a3a" stroke-width="3"/>
+        <circle cx="370" cy="60" r="12" fill="#d04a3a"/>
+        <text x="370" y="105" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d04a3a" font-weight="600">E-STOP</text>
+        <text x="370" y="118" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#8a8f97">N.C. → Buck#1 EN</text>
+      </g>
+      <line x1="320" y1="60" x2="348" y2="60" stroke="#d04a3a" stroke-width="2"/>
+
+      <!-- 24V rail bus bar -->
+      <line x1="392" y1="60" x2="900" y2="60" stroke="#d04a3a" stroke-width="3"/>
+      <text x="800" y="50" font-family="var(--mono)" font-size="11" fill="#d04a3a" font-weight="600">24 V BUS</text>
+
+      <!-- Bucks -->
+      <!-- Buck 1: 24→12 V Servo -->
+      <g transform="translate(160,200)">
+        <rect width="160" height="110" rx="4" fill="#1a1d22" stroke="#C45A1F" stroke-width="2"/>
+        <text x="80" y="20" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#C45A1F" font-weight="600">BUCK #1 (DPS5020)</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="22" fill="#d7dade" font-weight="700">12 V</text>
+        <text x="80" y="60" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#8a8f97">20 A continuous</text>
+        <text x="80" y="78" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a">→ servo bus</text>
+        <text x="80" y="94" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5a90c8">EN ← Teensy GPIO</text>
+      </g>
+      <line x1="240" y1="60" x2="240" y2="200" stroke="#d04a3a" stroke-width="2"/>
+
+      <!-- Buck 2: 24→5 V Jetson -->
+      <g transform="translate(360,200)">
+        <rect width="160" height="110" rx="4" fill="#1a1d22" stroke="#5a90c8" stroke-width="2"/>
+        <text x="80" y="20" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5a90c8" font-weight="600">BUCK #2 (D24V90F5)</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="22" fill="#d7dade" font-weight="700">5 V</text>
+        <text x="80" y="60" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#8a8f97">8 A</text>
+        <text x="80" y="78" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a">→ Jetson Orin Nano</text>
+        <text x="80" y="94" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5a90c8">EN ← Teensy GPIO</text>
+      </g>
+      <line x1="440" y1="60" x2="440" y2="200" stroke="#d04a3a" stroke-width="2"/>
+
+      <!-- Buck 3: 24→5 V Teensy -->
+      <g transform="translate(560,200)">
+        <rect width="160" height="110" rx="4" fill="#1a1d22" stroke="#5fa84a" stroke-width="2"/>
+        <text x="80" y="20" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a" font-weight="600">BUCK #3 (D24V22F5)</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="22" fill="#d7dade" font-weight="700">5 V</text>
+        <text x="80" y="60" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#8a8f97">3 A</text>
+        <text x="80" y="78" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a">→ Teensy + sensors</text>
+        <text x="80" y="94" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#C45A1F">always-on</text>
+      </g>
+      <line x1="640" y1="60" x2="640" y2="200" stroke="#d04a3a" stroke-width="2"/>
+
+      <!-- Buck 4: 5→3.3 V Pico -->
+      <g transform="translate(760,200)">
+        <rect width="160" height="110" rx="4" fill="#1a1d22" stroke="#8a78d0" stroke-width="2"/>
+        <text x="80" y="20" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#8a78d0" font-weight="600">BUCK #4 (LM2596)</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="22" fill="#d7dade" font-weight="700">3.3 V</text>
+        <text x="80" y="60" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#8a8f97">1 A · from 5V</text>
+        <text x="80" y="78" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a">→ Pico 2W + RYLR998</text>
+        <text x="80" y="94" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#C45A1F">always-on</text>
+      </g>
+      <line x1="640" y1="310" x2="640" y2="350" stroke="#5fa84a" stroke-width="2"/>
+      <line x1="640" y1="350" x2="840" y2="350" stroke="#5fa84a" stroke-width="2"/>
+      <line x1="840" y1="350" x2="840" y2="310" stroke="#5fa84a" stroke-width="2" stroke-dasharray="4 3"/>
+      <text x="740" y="345" font-family="var(--mono)" font-size="9" fill="#5fa84a">5V tap</text>
+
+      <!-- Loads at bottom -->
+      <!-- Servo bus + cap bank -->
+      <g transform="translate(140,400)">
+        <rect width="200" height="80" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="100" y="22" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#C45A1F" font-weight="600">SERVO BUS</text>
+        <text x="100" y="40" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">24× LX-224HV</text>
+        <text x="100" y="56" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#8a8f97">100 mF cap bank</text>
+        <text x="100" y="72" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#5fa84a">4 sub-buses</text>
+      </g>
+      <line x1="240" y1="310" x2="240" y2="400" stroke="#C45A1F" stroke-width="3" marker-end="url(#arr)"/>
+
+      <!-- Jetson -->
+      <g transform="translate(360,400)">
+        <rect width="160" height="80" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="80" y="22" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#5a90c8" font-weight="600">JETSON ORIN</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ RealSense</text>
+        <text x="80" y="56" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ Lepton + UMA-8</text>
+        <text x="80" y="72" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ Livox (Eth, 12V)</text>
+      </g>
+      <line x1="440" y1="310" x2="440" y2="400" stroke="#5a90c8" stroke-width="3" marker-end="url(#arr)"/>
+
+      <!-- Teensy + sensors -->
+      <g transform="translate(560,400)">
+        <rect width="160" height="80" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="80" y="22" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#5fa84a" font-weight="600">TEENSY 4.1</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ BNO086</text>
+        <text x="80" y="56" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ 3× VL53L1X</text>
+        <text x="80" y="72" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ 8× FSR · INA×4</text>
+      </g>
+      <line x1="640" y1="310" x2="640" y2="400" stroke="#5fa84a" stroke-width="3" marker-end="url(#arr)"/>
+
+      <!-- Pico LoRa -->
+      <g transform="translate(760,400)">
+        <rect width="160" height="80" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="80" y="22" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#8a78d0" font-weight="600">PICO 2 W</text>
+        <text x="80" y="40" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#d7dade">+ RYLR998 LoRa</text>
+        <text x="80" y="56" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#8a8f97">915 MHz</text>
+        <text x="80" y="72" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="#8a8f97">→ cyberdeck</text>
+      </g>
+      <line x1="840" y1="310" x2="840" y2="400" stroke="#8a78d0" stroke-width="3" marker-end="url(#arr)"/>
+
+      <!-- INA226 telemetry callouts -->
+      <g font-family="var(--mono)" font-size="9" fill="#d0a02a">
+        <rect x="295" y="335" width="60" height="20" rx="2" fill="#1a1d22" stroke="#d0a02a"/>
+        <text x="325" y="349" text-anchor="middle">INA226</text>
+        <rect x="495" y="335" width="60" height="20" rx="2" fill="#1a1d22" stroke="#d0a02a"/>
+        <text x="525" y="349" text-anchor="middle">INA226</text>
+        <rect x="695" y="335" width="60" height="20" rx="2" fill="#1a1d22" stroke="#d0a02a"/>
+        <text x="725" y="349" text-anchor="middle">INA226</text>
+        <rect x="895" y="335" width="60" height="20" rx="2" fill="#1a1d22" stroke="#d0a02a"/>
+        <text x="925" y="349" text-anchor="middle">INA226</text>
+      </g>
+
+      <!-- I2C bus back to Teensy -->
+      <g stroke="#d0a02a" stroke-dasharray="3 3" stroke-width="1" fill="none">
+        <path d="M 325 355 Q 325 510 640 510 L 640 480"/>
+        <path d="M 525 355 Q 525 520 640 520 L 640 510"/>
+        <path d="M 725 355 Q 725 520 640 520"/>
+        <path d="M 925 355 Q 925 530 640 530 L 640 520"/>
+      </g>
+      <text x="500" y="555" font-family="var(--mono)" font-size="10" fill="#d0a02a" text-anchor="middle">I²C1 → Teensy (pins 24/25) → ROS 2 /spiderbot/power/*</text>
+
+      <!-- Legend -->
+      <g transform="translate(20,560)" font-family="var(--mono)" font-size="10">
+        <text x="0" y="0" fill="#8a8f97">Wiring:</text>
+        <line x1="60" y1="-4" x2="100" y2="-4" stroke="#d04a3a" stroke-width="3"/>
+        <text x="105" y="0" fill="#d7dade">24V (red)</text>
+        <line x1="170" y1="-4" x2="210" y2="-4" stroke="#C45A1F" stroke-width="3"/>
+        <text x="215" y="0" fill="#d7dade">12V servo</text>
+        <line x1="285" y1="-4" x2="325" y2="-4" stroke="#5fa84a" stroke-width="3"/>
+        <text x="330" y="0" fill="#d7dade">5V</text>
+        <line x1="365" y1="-4" x2="405" y2="-4" stroke="#8a78d0" stroke-width="3"/>
+        <text x="410" y="0" fill="#d7dade">3.3V</text>
+        <line x1="465" y1="-4" x2="505" y2="-4" stroke="#d0a02a" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="510" y="0" fill="#d7dade">I²C telemetry</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Power-up sequence -->
+  <h2 class="section">Smart power-up sequence (design.md §11.5)</h2>
+  <p class="text-mute small">Naive failure mode: servos see garbage at boot, snap to weird poses, robot jerks. Smart sequence: compute boots first, verifies safe pose, <em>then</em> enables the servo rail.</p>
+
+  <div class="controls">
+    <button id="play-seq" class="primary">▶ Animate sequence</button>
+    <button id="reset-seq">Reset</button>
+    <span class="text-mute small">Total elapsed: <span id="elapsed-time" class="mono text-amber">0 ms</span></span>
+  </div>
+
+  <div id="sequence">
+    <div class="sequence-step" data-step="1" data-t="0">
+      <div class="step-num">1</div>
+      <div><h3>Battery connected via XT60+XT90-S</h3><div class="desc">Anti-spark XT90-S in series with XT60 limits inrush current at first connection. 24 V bus comes alive.</div></div>
+      <div class="timing">t=0 ms</div>
+    </div>
+    <div class="sequence-step" data-step="2" data-t="50">
+      <div class="step-num">2</div>
+      <div><h3>Buck #3 (Teensy rail) comes up</h3><div class="desc">Always-on 5 V rail. Teensy begins boot.</div></div>
+      <div class="timing">+50 ms</div>
+    </div>
+    <div class="sequence-step" data-step="3" data-t="80">
+      <div class="step-num">3</div>
+      <div><h3>Buck #4 (Pico rail) comes up</h3><div class="desc">Always-on 3.3 V rail tapped from Buck #3. Pico 2 W boots LoRa sidecar.</div></div>
+      <div class="timing">+80 ms</div>
+    </div>
+    <div class="sequence-step" data-step="4" data-t="500">
+      <div class="step-num">4</div>
+      <div><h3>Teensy self-test, load safe-pose config</h3><div class="desc">Read joint_offsets.yaml, joint_limits.yaml, self-test I²C buses, init INA226s, verify estop sense.</div></div>
+      <div class="timing">+500 ms</div>
+    </div>
+    <div class="sequence-step" data-step="5" data-t="600">
+      <div class="step-num">5</div>
+      <div><h3>Teensy raises Buck #1 EN → servo rail HOT</h3><div class="desc">12 V on the cap bank. Inrush limited by NTC + cap pre-charge resistor. Wait ~100 ms for stable rail.</div></div>
+      <div class="timing">+600 ms</div>
+    </div>
+    <div class="sequence-step" data-step="6" data-t="700">
+      <div class="step-num">6</div>
+      <div><h3>Teensy broadcasts safe-pose to all 24 servos</h3><div class="desc">Before any servo can act on uninitialized command. Servos move smoothly to standing pose.</div></div>
+      <div class="timing">+700 ms</div>
+    </div>
+    <div class="sequence-step" data-step="7" data-t="1200">
+      <div class="step-num">7</div>
+      <div><h3>Servos confirmed at safe pose · enable Buck #2 (Jetson)</h3><div class="desc">Teensy reads back position from all 24 servos. Confirms within tolerance. Only then EN Buck #2.</div></div>
+      <div class="timing">+1.2 s</div>
+    </div>
+    <div class="sequence-step" data-step="8" data-t="45000">
+      <div class="step-num">8</div>
+      <div><h3>Jetson boots Linux + ROS 2 (~45 s)</h3><div class="desc">Ubuntu 22.04 + JetPack 6 + ROS 2 Humble. micro-ROS bridge connects to Teensy.</div></div>
+      <div class="timing">+45 s</div>
+    </div>
+    <div class="sequence-step" data-step="9" data-t="46000">
+      <div class="step-num">9</div>
+      <div><h3>System operational</h3><div class="desc">Joystick can drive gait. Estop still cuts Buck #1 EN at the hardware level — no firmware bug can override.</div></div>
+      <div class="timing">+46 s</div>
+    </div>
+  </div>
+
+  <!-- Estop wiring -->
+  <h2 class="section">Estop wiring detail</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>The hardware path</h3>
+      <pre class="block">12V ──┬── 10 kΩ pull-up ───┬─── Buck #1 EN
+       │                    │
+       │                    └─── ┐
+       │                         │
+       │                  ┌──N.C.┘    (estop latched in:
+       └── estop coil ────┘            contact OPEN ──→ EN floats)
+                          │
+                         GND</pre>
+      <p class="text-mute small">Estop pressed → N.C. opens → EN line floats (10 kΩ to 12 V isn't enough current to keep Buck #1 alive, designed-in) → Buck #1 shuts off → servos go limp. Compute (Buck #2/#3/#4) stays alive for graceful shutdown.</p>
+    </div>
+    <div class="card">
+      <h3>Why hardware, not software</h3>
+      <p class="text-mute small">Firmware bugs happen. A software-only estop can lock up. A hardware estop in series with the buck's EN pin cannot — physics, not code, kills the rail.</p>
+      <p class="text-mute small mt-2"><strong>Test it every session</strong> (T1.8): press estop, verify rail dies within 50 ms on scope. If it doesn't latch, fix before powering servos.</p>
+    </div>
+  </div>
+
+  <!-- Inrush protection -->
+  <h2 class="section">Inrush protection</h2>
+  <table class="data">
+    <thead><tr><th>Risk</th><th>Cause</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Spark at first XT60 connect</td><td>Discharged cap bank looks like a short to a charged LiPo</td><td><strong>XT90-S in series</strong> (built-in pre-charge resistor) or NTC thermistor in series, bypassed by relay 200 ms after rail-up</td></tr>
+      <tr><td>Buck #1 trips at cold start</td><td>Cap bank inrush exceeds Buck #1's current limit</td><td>NTC 10 Ω 5 A in series with bypass relay · or commission with pre-charge resistor manually shorted across connector before plugging in</td></tr>
+      <tr><td>Servo coil kickback</td><td>Inductive load slamming the bus</td><td>TVS diodes (SMAJ24CA) per rail · ferrite bead on each sub-bus output</td></tr>
+      <tr><td>Wire welded by dropped tool</td><td>50 A available at 24 V welds metal at >1000 °C</td><td>Tape shanks of screwdrivers near battery rail · cap XT60 terminals when not connected · disconnect battery before wiring changes</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Sub-bus topology -->
+  <h2 class="section">Servo sub-bus star topology (schematic.md §3)</h2>
+  <div class="diagram-frame">
+    <svg viewBox="0 0 800 240" style="width:100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hub -->
+      <rect x="340" y="100" width="120" height="40" rx="4" fill="#1a1d22" stroke="#C45A1F" stroke-width="2"/>
+      <text x="400" y="118" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#C45A1F" font-weight="600">BUS STAR HUB</text>
+      <text x="400" y="132" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="#8a8f97">Teensy TX1 + 22µF + ferrite + TVS</text>
+
+      <!-- 4 sub-buses -->
+      <g font-family="var(--mono)" font-size="10">
+        <line x1="340" y1="120" x2="200" y2="60" stroke="#C45A1F" stroke-width="2"/>
+        <rect x="80" y="40" width="120" height="40" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="140" y="58" text-anchor="middle" fill="#d7dade">SUB-BUS A</text>
+        <text x="140" y="72" text-anchor="middle" fill="#8a8f97">legs 1-2 · 0x01–0x06</text>
+
+        <line x1="460" y1="120" x2="600" y2="60" stroke="#C45A1F" stroke-width="2"/>
+        <rect x="600" y="40" width="120" height="40" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="660" y="58" text-anchor="middle" fill="#d7dade">SUB-BUS B</text>
+        <text x="660" y="72" text-anchor="middle" fill="#8a8f97">legs 3-4 · 0x07–0x0C</text>
+
+        <line x1="340" y1="120" x2="200" y2="180" stroke="#C45A1F" stroke-width="2"/>
+        <rect x="80" y="160" width="120" height="40" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="140" y="178" text-anchor="middle" fill="#d7dade">SUB-BUS C</text>
+        <text x="140" y="192" text-anchor="middle" fill="#8a8f97">legs 5-6 · 0x0D–0x12</text>
+
+        <line x1="460" y1="120" x2="600" y2="180" stroke="#C45A1F" stroke-width="2"/>
+        <rect x="600" y="160" width="120" height="40" rx="4" fill="#0d0e10" stroke="#3a4048"/>
+        <text x="660" y="178" text-anchor="middle" fill="#d7dade">SUB-BUS D</text>
+        <text x="660" y="192" text-anchor="middle" fill="#8a8f97">legs 7-8 · 0x13–0x18</text>
+      </g>
+    </svg>
+  </div>
+  <p class="text-mute small mt-1">All 4 sub-buses tied at Teensy TX. Physically separated to keep wire runs short. Each tap has its own 22 µF + ferrite on power. Isolates single-bus faults.</p>
+
+  <footer class="footer">source: design.md §5, §11.5 · schematic.md §1, §3, §6, §7</footer>
+</div>
+
+<script src="shared.js"></script>
+<script>
+const steps = document.querySelectorAll(".sequence-step");
+const playBtn = document.getElementById("play-seq");
+const resetBtn = document.getElementById("reset-seq");
+const elapsedEl = document.getElementById("elapsed-time");
+let timer = null;
+
+function reset() {
+  steps.forEach(s => s.classList.remove("active"));
+  elapsedEl.textContent = "0 ms";
+  if (timer) { clearTimeout(timer); timer = null; }
+}
+
+function animate() {
+  reset();
+  let idx = 0;
+  const order = Array.from(steps);
+  function next() {
+    if (idx >= order.length) return;
+    const s = order[idx];
+    const t = parseInt(s.dataset.t, 10);
+    s.classList.add("active");
+    elapsedEl.textContent = t >= 1000 ? `${(t/1000).toFixed(1)} s` : `${t} ms`;
+    idx++;
+    // Real wall-clock too jittery for full 45 s play — scale to 8 s total animation
+    const SCALE = 8000 / 46000;
+    const nextT = idx < order.length ? parseInt(order[idx].dataset.t, 10) : t;
+    const delay = Math.max(120, (nextT - t) * SCALE);
+    timer = setTimeout(next, delay);
+  }
+  next();
+}
+
+playBtn.addEventListener("click", animate);
+resetBtn.addEventListener("click", reset);
+</script>
+</body>
+</html>

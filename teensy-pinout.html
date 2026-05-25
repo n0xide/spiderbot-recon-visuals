@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teensy 4.1 pinout · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .teensy-wrap { display: grid; grid-template-columns: minmax(420px, 540px) 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 980px) { .teensy-wrap { grid-template-columns: 1fr; } }
+
+  .pinmap-svg { width: 100%; height: auto; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+
+  .pin-row { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; padding: 1px 0; }
+  .pin-num { width: 28px; text-align: right; color: var(--text-mute); font-weight: 600; }
+  .pin-fn  { color: var(--text); }
+  .pin-cat { padding: 1px 6px; border-radius: 2px; font-size: 9px; letter-spacing: 0.05em; margin-left: auto; }
+
+  .cat-bus    { color: #C45A1F; border:1px solid #6a3010; background: rgba(196,90,31,0.08); }
+  .cat-imu    { color: #5a90c8; border:1px solid #2a4a6a; background: rgba(90,144,200,0.08); }
+  .cat-tof    { color: #8a78d0; border:1px solid #4a4078; background: rgba(138,120,208,0.08); }
+  .cat-fsr    { color: #5fa84a; border:1px solid #305a25; background: rgba(95,168,74,0.08); }
+  .cat-pwr    { color: #d04a3a; border:1px solid #6a201a; background: rgba(208,74,58,0.08); }
+  .cat-ros    { color: #d04a8a; border:1px solid #6a204a; background: rgba(208,74,138,0.08); }
+  .cat-spi    { color: #d0a02a; border:1px solid #6a5015; background: rgba(208,160,42,0.08); }
+  .cat-pwm    { color: #B8B8B8; border:1px solid #5a5a5a; background: rgba(184,184,184,0.06); }
+  .cat-i2s    { color: #d0a02a; border:1px solid #6a5015; background: rgba(208,160,42,0.06); }
+  .cat-free   { color: #5a6068; border:1px solid #2a2f36; }
+
+  .cat-row { padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .cat-row:last-child { border-bottom: none; }
+  .legend-key { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0; font-family: var(--mono); font-size: 11px; }
+  .legend-key .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+</style>
+</head>
+<body data-ns="teensy">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ Teensy 4.1 pinout</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html" class="active">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <div class="banner">
+    <span class="banner-tag">Source</span>
+    <span>schematic.md §2 · 55 GPIO + 8 UARTs + 3 I²C + 3 SPI + CAN + SD · ~40% of pins committed in Phase 1, headroom intact.</span>
+  </div>
+
+  <div class="legend-key">
+    <span><span class="swatch" style="background:#C45A1F"></span>Servo bus</span>
+    <span><span class="swatch" style="background:#5a90c8"></span>IMU (I²C0)</span>
+    <span><span class="swatch" style="background:#8a78d0"></span>ToF (I²C0)</span>
+    <span><span class="swatch" style="background:#5fa84a"></span>FSR feet (ADC)</span>
+    <span><span class="swatch" style="background:#d04a3a"></span>Power telemetry (I²C1)</span>
+    <span><span class="swatch" style="background:#d04a8a"></span>micro-ROS (UART)</span>
+    <span><span class="swatch" style="background:#d0a02a"></span>HUD (SPI) / I²S</span>
+    <span><span class="swatch" style="background:#B8B8B8"></span>PWM / GPIO</span>
+    <span><span class="swatch" style="background:#5a6068"></span>Reserved</span>
+  </div>
+
+  <div class="teensy-wrap mt-2">
+
+    <!-- LEFT: SVG board diagram -->
+    <div>
+      <svg class="pinmap-svg" viewBox="0 0 540 760" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="boardGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1a3a5a"/>
+            <stop offset="100%" stop-color="#0e2540"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Board outline -->
+        <rect x="170" y="40" width="200" height="680" rx="6" fill="url(#boardGrad)" stroke="#0a1828" stroke-width="2"/>
+
+        <!-- USB-C -->
+        <rect x="240" y="20" width="60" height="30" rx="3" fill="#888" stroke="#444"/>
+        <text x="270" y="40" text-anchor="middle" fill="#222" font-family="var(--mono)" font-size="10" font-weight="600">USB-C</text>
+
+        <!-- "TEENSY 4.1" silkscreen -->
+        <text x="270" y="380" text-anchor="middle" fill="#5fa884" font-family="var(--mono)" font-size="14" font-weight="700" letter-spacing="0.1em">TEENSY 4.1</text>
+        <text x="270" y="400" text-anchor="middle" fill="#8a8f97" font-family="var(--mono)" font-size="9" letter-spacing="0.1em">600 MHz · 1 MB RAM</text>
+
+        <!-- Ethernet pads (bottom) -->
+        <rect x="190" y="700" width="160" height="14" fill="#222" stroke="#444"/>
+        <text x="270" y="711" text-anchor="middle" fill="#666" font-family="var(--mono)" font-size="9">ETH</text>
+
+        <!-- microSD silhouette (back) -->
+        <rect x="195" y="640" width="80" height="50" fill="#0a1828" stroke="#1a3a5a" stroke-dasharray="2 2"/>
+        <text x="235" y="668" text-anchor="middle" fill="#5a6068" font-family="var(--mono)" font-size="8">μSD (back)</text>
+
+        <!-- Pin function visualization -->
+        <!-- Pins are drawn as gold circles -->
+        <g font-family="var(--mono)" font-size="10">
+
+          <!-- LEFT COLUMN: 0-23 -->
+          <!-- y = 70 + 24*i  for i=0..23 -->
+          <!-- LEFT_TXT_X = 165 -->
+
+          <!-- Pin 0: RX1 -->
+          <circle cx="180" cy="70" r="4" fill="#C45A1F"/>
+          <text x="160" y="73" text-anchor="end" fill="#d7dade" font-weight="600">0</text>
+          <text x="200" y="73" fill="#C45A1F">RX1 ← servo bus</text>
+
+          <circle cx="180" cy="94" r="4" fill="#C45A1F"/>
+          <text x="160" y="97" text-anchor="end" fill="#d7dade" font-weight="600">1</text>
+          <text x="200" y="97" fill="#C45A1F">TX1 → servo bus</text>
+
+          <circle cx="180" cy="118" r="4" fill="#C45A1F"/>
+          <text x="160" y="121" text-anchor="end" fill="#d7dade" font-weight="600">2</text>
+          <text x="200" y="121" fill="#C45A1F">DE/RE enable</text>
+
+          <circle cx="180" cy="142" r="4" fill="#d04a3a"/>
+          <text x="160" y="145" text-anchor="end" fill="#d7dade" font-weight="600">3</text>
+          <text x="200" y="145" fill="#d04a3a">estop sense</text>
+
+          <circle cx="180" cy="166" r="4" fill="#B8B8B8"/>
+          <text x="160" y="169" text-anchor="end" fill="#d7dade" font-weight="600">4</text>
+          <text x="200" y="169" fill="#B8B8B8">WS2812B (P5)</text>
+
+          <circle cx="180" cy="190" r="4" fill="#d0a02a"/>
+          <text x="160" y="193" text-anchor="end" fill="#d7dade" font-weight="600">5</text>
+          <text x="200" y="193" fill="#d0a02a">HUD backlight</text>
+
+          <circle cx="180" cy="214" r="4" fill="#d0a02a"/>
+          <text x="160" y="217" text-anchor="end" fill="#d7dade" font-weight="600">6</text>
+          <text x="200" y="217" fill="#d0a02a">HUD RST</text>
+
+          <circle cx="180" cy="238" r="4" fill="#d04a8a"/>
+          <text x="160" y="241" text-anchor="end" fill="#d7dade" font-weight="600">7</text>
+          <text x="200" y="241" fill="#d04a8a">RX2 (μ-ROS)</text>
+
+          <circle cx="180" cy="262" r="4" fill="#d04a8a"/>
+          <text x="160" y="265" text-anchor="end" fill="#d7dade" font-weight="600">8</text>
+          <text x="200" y="265" fill="#d04a8a">TX2 (μ-ROS)</text>
+
+          <circle cx="180" cy="286" r="4" fill="#d0a02a"/>
+          <text x="160" y="289" text-anchor="end" fill="#d7dade" font-weight="600">9</text>
+          <text x="200" y="289" fill="#d0a02a">HUD DC</text>
+
+          <circle cx="180" cy="310" r="4" fill="#d0a02a"/>
+          <text x="160" y="313" text-anchor="end" fill="#d7dade" font-weight="600">10</text>
+          <text x="200" y="313" fill="#d0a02a">HUD CS</text>
+
+          <circle cx="180" cy="334" r="4" fill="#d0a02a"/>
+          <text x="160" y="337" text-anchor="end" fill="#d7dade" font-weight="600">11</text>
+          <text x="200" y="337" fill="#d0a02a">MOSI (HUD)</text>
+
+          <circle cx="180" cy="358" r="4" fill="#5a6068"/>
+          <text x="160" y="361" text-anchor="end" fill="#d7dade" font-weight="600">12</text>
+          <text x="200" y="361" fill="#5a6068">MISO · free</text>
+
+          <circle cx="180" cy="382" r="4" fill="#d0a02a"/>
+          <text x="160" y="385" text-anchor="end" fill="#d7dade" font-weight="600">13</text>
+          <text x="200" y="385" fill="#d0a02a">SCK · LED</text>
+
+          <!-- 14-17 FSR feet 1-4 -->
+          <circle cx="180" cy="406" r="4" fill="#5fa84a"/>
+          <text x="160" y="409" text-anchor="end" fill="#d7dade" font-weight="600">14</text>
+          <text x="200" y="409" fill="#5fa84a">A0 · FSR foot 1</text>
+
+          <circle cx="180" cy="430" r="4" fill="#5fa84a"/>
+          <text x="160" y="433" text-anchor="end" fill="#d7dade" font-weight="600">15</text>
+          <text x="200" y="433" fill="#5fa84a">A1 · FSR foot 2</text>
+
+          <circle cx="180" cy="454" r="4" fill="#5fa84a"/>
+          <text x="160" y="457" text-anchor="end" fill="#d7dade" font-weight="600">16</text>
+          <text x="200" y="457" fill="#5fa84a">A2 · FSR foot 3</text>
+
+          <circle cx="180" cy="478" r="4" fill="#5fa84a"/>
+          <text x="160" y="481" text-anchor="end" fill="#d7dade" font-weight="600">17</text>
+          <text x="200" y="481" fill="#5fa84a">A3 · FSR foot 4</text>
+
+          <circle cx="180" cy="502" r="4" fill="#5a90c8"/>
+          <text x="160" y="505" text-anchor="end" fill="#d7dade" font-weight="600">18</text>
+          <text x="200" y="505" fill="#5a90c8">SDA0 (BNO+ToF)</text>
+
+          <circle cx="180" cy="526" r="4" fill="#5a90c8"/>
+          <text x="160" y="529" text-anchor="end" fill="#d7dade" font-weight="600">19</text>
+          <text x="200" y="529" fill="#5a90c8">SCL0 (BNO+ToF)</text>
+
+          <circle cx="180" cy="550" r="4" fill="#5fa84a"/>
+          <text x="160" y="553" text-anchor="end" fill="#d7dade" font-weight="600">20</text>
+          <text x="200" y="553" fill="#5fa84a">A4 · FSR foot 5</text>
+
+          <circle cx="180" cy="574" r="4" fill="#5fa84a"/>
+          <text x="160" y="577" text-anchor="end" fill="#d7dade" font-weight="600">21</text>
+          <text x="200" y="577" fill="#5fa84a">A5 · FSR foot 6</text>
+
+          <circle cx="180" cy="598" r="4" fill="#5fa84a"/>
+          <text x="160" y="601" text-anchor="end" fill="#d7dade" font-weight="600">22</text>
+          <text x="200" y="601" fill="#5fa84a">A6 · FSR foot 7</text>
+
+          <circle cx="180" cy="622" r="4" fill="#5fa84a"/>
+          <text x="160" y="625" text-anchor="end" fill="#d7dade" font-weight="600">23</text>
+          <text x="200" y="625" fill="#5fa84a">A7 · FSR foot 8</text>
+
+          <!-- RIGHT COLUMN: 24-41 + power -->
+          <!-- right pin x = 360, label x = 380 (left-anchor) -->
+          <circle cx="360" cy="70" r="4" fill="#d04a3a"/>
+          <text x="380" y="73" fill="#d7dade" font-weight="600">24</text>
+          <text x="406" y="73" fill="#d04a3a">SDA1 (INA226)</text>
+
+          <circle cx="360" cy="94" r="4" fill="#d04a3a"/>
+          <text x="380" y="97" fill="#d7dade" font-weight="600">25</text>
+          <text x="406" y="97" fill="#d04a3a">SCL1 (INA226)</text>
+
+          <circle cx="360" cy="118" r="4" fill="#5a6068"/>
+          <text x="380" y="121" fill="#d7dade" font-weight="600">26</text>
+          <text x="406" y="121" fill="#5a6068">free</text>
+
+          <circle cx="360" cy="142" r="4" fill="#5a6068"/>
+          <text x="380" y="145" fill="#d7dade" font-weight="600">27</text>
+          <text x="406" y="145" fill="#5a6068">free</text>
+
+          <circle cx="360" cy="166" r="4" fill="#B8B8B8"/>
+          <text x="380" y="169" fill="#d7dade" font-weight="600">28</text>
+          <text x="406" y="169" fill="#B8B8B8">PWM · gimbal pan</text>
+
+          <circle cx="360" cy="190" r="4" fill="#B8B8B8"/>
+          <text x="380" y="193" fill="#d7dade" font-weight="600">29</text>
+          <text x="406" y="193" fill="#B8B8B8">PWM · gimbal tilt</text>
+
+          <circle cx="360" cy="214" r="4" fill="#d04a3a"/>
+          <text x="380" y="217" fill="#d7dade" font-weight="600">30</text>
+          <text x="406" y="217" fill="#d04a3a">INA226 ALERT</text>
+
+          <circle cx="360" cy="238" r="4" fill="#5a6068"/>
+          <text x="380" y="241" fill="#d7dade" font-weight="600">31</text>
+          <text x="406" y="241" fill="#5a6068">free</text>
+
+          <circle cx="360" cy="262" r="4" fill="#5a6068"/>
+          <text x="380" y="265" fill="#d7dade" font-weight="600">32</text>
+          <text x="406" y="265" fill="#5a6068">free</text>
+
+          <circle cx="360" cy="286" r="4" fill="#5a90c8"/>
+          <text x="380" y="289" fill="#d7dade" font-weight="600">33</text>
+          <text x="406" y="289" fill="#5a90c8">BNO086 INT</text>
+
+          <circle cx="360" cy="310" r="4" fill="#5a90c8"/>
+          <text x="380" y="313" fill="#d7dade" font-weight="600">34</text>
+          <text x="406" y="313" fill="#5a90c8">BNO086 RST</text>
+
+          <circle cx="360" cy="334" r="4" fill="#8a78d0"/>
+          <text x="380" y="337" fill="#d7dade" font-weight="600">35</text>
+          <text x="406" y="337" fill="#8a78d0">ToF belly XSHUT</text>
+
+          <circle cx="360" cy="358" r="4" fill="#8a78d0"/>
+          <text x="380" y="361" fill="#d7dade" font-weight="600">36</text>
+          <text x="406" y="361" fill="#8a78d0">ToF flank-L XSHUT</text>
+
+          <circle cx="360" cy="382" r="4" fill="#8a78d0"/>
+          <text x="380" y="385" fill="#d7dade" font-weight="600">37</text>
+          <text x="406" y="385" fill="#8a78d0">ToF flank-R XSHUT</text>
+
+          <circle cx="360" cy="406" r="4" fill="#5a6068"/>
+          <text x="380" y="409" fill="#d7dade" font-weight="600">38</text>
+          <text x="406" y="409" fill="#5a6068">free</text>
+
+          <circle cx="360" cy="430" r="4" fill="#5a6068"/>
+          <text x="380" y="433" fill="#d7dade" font-weight="600">39</text>
+          <text x="406" y="433" fill="#5a6068">free (A15)</text>
+
+          <circle cx="360" cy="454" r="4" fill="#5a6068"/>
+          <text x="380" y="457" fill="#d7dade" font-weight="600">40</text>
+          <text x="406" y="457" fill="#5a6068">free (A16)</text>
+
+          <circle cx="360" cy="478" r="4" fill="#5a6068"/>
+          <text x="380" y="481" fill="#d7dade" font-weight="600">41</text>
+          <text x="406" y="481" fill="#5a6068">free (A17)</text>
+
+          <!-- Power pins -->
+          <circle cx="360" cy="510" r="4" fill="#d04a3a"/>
+          <text x="380" y="513" fill="#d7dade" font-weight="600">VIN</text>
+          <text x="420" y="513" fill="#d04a3a">5 V from Buck #3</text>
+
+          <circle cx="360" cy="534" r="4" fill="#d04a3a"/>
+          <text x="380" y="537" fill="#d7dade" font-weight="600">GND</text>
+          <text x="420" y="537" fill="#d04a3a">star ground</text>
+
+          <circle cx="360" cy="558" r="4" fill="#d04a3a"/>
+          <text x="380" y="561" fill="#d7dade" font-weight="600">3V3</text>
+          <text x="420" y="561" fill="#d04a3a">sensor pull-ups</text>
+
+          <circle cx="360" cy="582" r="4" fill="#d04a3a"/>
+          <text x="380" y="585" fill="#d7dade" font-weight="600">AGND</text>
+          <text x="420" y="585" fill="#d04a3a">FSR analog ref</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- RIGHT: function-by-category breakdown -->
+    <div>
+
+      <div class="card">
+        <span class="card-tag">servo bus</span>
+        <h2>Servo bus (Serial1 + DE/RE) <span class="pill amber">P0</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">0</span><span class="pin-fn">RX1 ← bus reply line</span><span class="pin-cat cat-bus">UART1</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">1</span><span class="pin-fn">TX1 → bus drive line (via 74HC126)</span><span class="pin-cat cat-bus">UART1</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">2</span><span class="pin-fn">Bus enable DE/RE · LOW=listen / HIGH=drive</span><span class="pin-cat cat-bus">GPIO</span></div></div>
+        <p class="text-mute small mt-2">≤500 kbaud, daisy-chained 3-wire JST · 4 sub-buses (legs 1-2, 3-4, 5-6, 7-8) tied at TX side. 120 Ω termination if ringing.</p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">IMU + ToF</span>
+        <h2>I²C0 — BNO086 + VL53L1X <span class="pill amber">P0/P2</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">18</span><span class="pin-fn">SDA0 (4.7 kΩ pull-up to 3V3)</span><span class="pin-cat cat-imu">I²C0</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">19</span><span class="pin-fn">SCL0 (4.7 kΩ pull-up to 3V3)</span><span class="pin-cat cat-imu">I²C0</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">33</span><span class="pin-fn">BNO086 INT · data-ready → raise imu_thread</span><span class="pin-cat cat-imu">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">34</span><span class="pin-fn">BNO086 RST · pull LOW for watchdog reset</span><span class="pin-cat cat-imu">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">35</span><span class="pin-fn">VL53L1X belly XSHUT · I²C addr remap at boot</span><span class="pin-cat cat-tof">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">36</span><span class="pin-fn">VL53L1X flank-L XSHUT</span><span class="pin-cat cat-tof">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">37</span><span class="pin-fn">VL53L1X flank-R XSHUT</span><span class="pin-cat cat-tof">GPIO</span></div></div>
+        <p class="text-mute small mt-2">BNO086 at 0x4A · VL53L1X addresses set per-sensor on boot via XSHUT sequencing. Bus ≤30 cm. 100 kHz initial, 400 kHz after validation.</p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">foot contact</span>
+        <h2>FSR foot array (8× analog) <span class="pill amber">P1</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">14-17</span><span class="pin-fn">A0–A3 · feet 1-4 · 10 kΩ voltage divider to AGND</span><span class="pin-cat cat-fsr">ADC0</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">20-23</span><span class="pin-fn">A4–A7 · feet 5-8</span><span class="pin-cat cat-fsr">ADC1</span></div></div>
+        <p class="text-mute small mt-2">12-bit ADC · 1 kHz sample rate · contact-event threshold in firmware. Foot order = bus address order (leg 1 R1 → leg 8 L4 CCW from front-right).</p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">power telemetry</span>
+        <h2>I²C1 — INA226 ×4 <span class="pill amber">P1</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">24</span><span class="pin-fn">SDA1 (4.7 kΩ pull-up)</span><span class="pin-cat cat-pwr">I²C1</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">25</span><span class="pin-fn">SCL1 (4.7 kΩ pull-up)</span><span class="pin-cat cat-pwr">I²C1</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">30</span><span class="pin-fn">INA226 ALERT · over-current → safe-pose</span><span class="pin-cat cat-pwr">IRQ</span></div></div>
+        <p class="text-mute small mt-2">Separate I²C bus from IMU to keep sensor-fusion timing clean. One INA226 per rail (Buck #1 servo, Buck #2 Jetson, Buck #3 Teensy, Buck #4 Pico). 10 Hz publish to ROS 2.</p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">link to Jetson</span>
+        <h2>micro-ROS UART <span class="pill amber">P2</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">7</span><span class="pin-fn">RX2 ← Jetson /dev/ttyTHS1</span><span class="pin-cat cat-ros">UART2</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">8</span><span class="pin-fn">TX2 → Jetson /dev/ttyTHS1</span><span class="pin-cat cat-ros">UART2</span></div></div>
+        <p class="text-mute small mt-2">921 600 baud. <span class="text-warn">⚠ Pin 7 conflicts with P5 I²S DOUT — TBR during P5.</span></p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">safety</span>
+        <h2>Estop + status <span class="pill amber">P1</span></h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">3</span><span class="pin-fn">Estop sense · reads latch state → telemetry</span><span class="pin-cat cat-pwr">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">13</span><span class="pin-fn">LED_BUILTIN heartbeat (shares SPI SCK)</span><span class="pin-cat cat-pwm">GPIO</span></div></div>
+        <p class="text-mute small mt-2">Physical estop N.C. contact in series with Buck #1 EN — no firmware bug can override. Pin 3 just observes.</p>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">P2 head + P5 aesthetics</span>
+        <h2>PWM gimbal · HUD · WS2812B · SFX</h2>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">28,29</span><span class="pin-fn">PWM 50 Hz · MG90S head gimbal pan/tilt</span><span class="pin-cat cat-pwm">PWM</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">5,6,9-11,13</span><span class="pin-fn">HUD SPI (backlight, RST, DC, CS, MOSI, SCK)</span><span class="pin-cat cat-spi">SPI0</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">4</span><span class="pin-fn">WS2812B data · through TXS0108E 3V3→5V</span><span class="pin-cat cat-pwm">GPIO</span></div></div>
+        <div class="cat-row"><div class="pin-row"><span class="pin-num">20,21,7</span><span class="pin-fn">I²S LRCLK/BCLK/DOUT · MAX98357A SFX <span class="text-warn">(P5 TBR)</span></span><span class="pin-cat cat-i2s">I²S</span></div></div>
+      </div>
+
+      <div class="card mt-3">
+        <span class="card-tag">free pins</span>
+        <h2>Headroom for expansion</h2>
+        <div class="text-mute small">
+          <p><strong>Digital GPIO free:</strong> 12, 26, 27, 31, 32, 38–41 (8 pins · ADC capable)</p>
+          <p><strong>Analog inputs available:</strong> A14–A17 (pins 38–41) for additional sensors</p>
+          <p><strong>UARTs available:</strong> Serial3 (pins 14/15 conflict w/ FSR), Serial4 (16/17 conflict), Serial5 (20/21 conflict), Serial6 (24/25 conflict), Serial7 (28/29 conflict), Serial8 (34/35 conflict). All higher UARTs collide with current assignments — plan early if more serial needed.</p>
+          <p><strong>CAN:</strong> pin 22/23 (FlexCAN1) — currently FSR. CAN2 on pin 0/1 — currently bus. CAN3 on pin 30/31 — pin 30 INA226 ALERT. <span class="text-warn">CAN requires reassignment.</span></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Wiring notes -->
+  <h2 class="section">Signal integrity rules of thumb (schematic.md §7)</h2>
+  <div class="grid grid-2">
+    <div class="card"><h3>Servo bus</h3><p class="text-mute small">DATA line ≤80 cm total. Twisted-pair with GND if longer. 120 Ω termination at far end of each sub-bus if scope shows ringing.</p></div>
+    <div class="card"><h3>I²C</h3><p class="text-mute small">4.7 kΩ pull-ups, ≤30 cm total run, 100 kHz initially, bump to 400 kHz only after bench validation.</p></div>
+    <div class="card"><h3>CSI camera ribbon</h3><p class="text-mute small">Route flat, away from servo motors and 12 V rail. Magnetic interference from servo coils corrupts the CSI clock under a servo.</p></div>
+    <div class="card"><h3>LoRa antenna</h3><p class="text-mute small">SMA pigtail ≤10 cm. RYLR998's quarter-wave omni doesn't need an explicit ground plane.</p></div>
+  </div>
+
+  <footer class="footer">source: schematic.md §2-§7 · open wiring decisions (74HC126 vs direct, Pico USB vs UART) in schematic.md §8</footer>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

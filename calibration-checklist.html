@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calibration checklist · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .cal-card { position: relative; }
+  .cal-card .phase-tag { position: absolute; top: 10px; right: 14px; }
+  .proc-step { display: flex; gap: 12px; padding: 6px 0; align-items: flex-start; }
+  .proc-step .num { width: 22px; height: 22px; background: var(--bg-elev); border: 1px solid var(--border-hi); border-radius: 50%; font-family: var(--mono); font-size: 11px; text-align: center; line-height: 20px; color: var(--amber); flex-shrink: 0; }
+  .proc-step .text { font-size: 13px; color: var(--text); }
+
+  .value-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-hi);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+
+  .joint-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .joint-table th, .joint-table td { padding: 4px 6px; border: 1px solid var(--border); text-align: center; }
+  .joint-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--text-mute); background: var(--bg-elev); }
+  .joint-table td.label { text-align: left; font-family: var(--mono); color: var(--text); }
+  .joint-table input { width: 100%; background: transparent; border: none; color: var(--amber); font-family: var(--mono); font-size: 11px; text-align: center; }
+  .joint-table input:focus { background: var(--bg); outline: 1px solid var(--amber); }
+</style>
+</head>
+<body data-ns="calibration">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ calibration checklist</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html" class="active">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <div class="banner">
+    <span class="banner-tag">Why calibration matters</span>
+    <span>Servos installed without offsets walk subtly tilted. Uncalibrated IMU gives bad pose. Uncalibrated FSRs miss contact events. <em>Doing it badly produces robots that don't work right and you can't figure out why.</em></span>
+  </div>
+
+  <!-- Session checklist -->
+  <h2 class="section">Pre-session checklist (calibration.md §13)</h2>
+  <div class="card">
+    <label class="check"><input type="checkbox" data-persist id="cal-stand"><span class="check-label">Robot on walk-in-place stand</span></label>
+    <label class="check"><input type="checkbox" data-persist id="cal-psu"><span class="check-label">Bench power supply connected · <span class="text-mute">not battery — calibration takes time</span></span></label>
+    <label class="check"><input type="checkbox" data-persist id="cal-files"><span class="check-label">Config files staged (servo_offsets.yaml, joint_limits.yaml, foot_calibration.yaml, mic_array.yaml)</span></label>
+    <label class="check"><input type="checkbox" data-persist id="cal-tools"><span class="check-label">Tools at hand: calipers, level/inclinometer, programmer cable, scale, scope, multimeter</span></label>
+    <label class="check"><input type="checkbox" data-persist id="cal-log"><span class="check-label">Notebook (or log.md) open to record values</span></label>
+    <label class="check"><input type="checkbox" data-persist id="cal-budget"><span class="check-label">Time budget: 4 hours · <span class="text-mute">don't rush calibration</span></span></label>
+  </div>
+
+  <!-- ============================================ SERVO ZERO-OFFSETS -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P0/P1</span>
+    <span class="phase-badge p0 phase-tag">P0/P1</span>
+    <h2>1 · Servo zero-position offsets (24 servos)</h2>
+    <p class="text-mute small">Each servo's mounted spline orientation is a few degrees off ideal. Calibration measures the offset and stores it. Without offsets, IK commands and physical positions disagree by 2-5°, walking is subtly tilted.</p>
+
+    <h3 class="section">Procedure</h3>
+    <div class="proc-step"><div class="num">1</div><div class="text">Power up leg on bench fixture (or robot on walk-in-place stand). Commanded angles = factory zero.</div></div>
+    <div class="proc-step"><div class="num">2</div><div class="text">For each <strong>coxa</strong>: mechanically position the leg so the femur points straight out from the body radially. Read servo position via bus protocol. <code class="inline">offset_coxa = reading − expected_zero</code>.</div></div>
+    <div class="proc-step"><div class="num">3</div><div class="text">For each <strong>femur</strong>: hold the femur horizontal. Read position. <code class="inline">offset_femur = reading − 0°</code>.</div></div>
+    <div class="proc-step"><div class="num">4</div><div class="text">For each <strong>tibia</strong>: hold tibia vertical (knee fully extended, foot pointing straight down). Read. <code class="inline">offset_tibia = reading − 90°</code>.</div></div>
+    <div class="proc-step"><div class="num">5</div><div class="text">In firmware: <code class="inline">command = ik_result + offset[joint]</code> before sending to bus.</div></div>
+
+    <h3 class="section">Record offsets (per leg, degrees)</h3>
+    <table class="joint-table">
+      <thead><tr><th>Leg</th><th>Coxa addr</th><th>Coxa offset</th><th>Femur addr</th><th>Femur offset</th><th>Tibia addr</th><th>Tibia offset</th><th>✓</th></tr></thead>
+      <tbody>
+        <tr><td class="label">L1 (R1)</td><td>0x01</td><td><input type="text" data-persist id="off-L1-coxa" placeholder="0.0"></td><td>0x02</td><td><input type="text" data-persist id="off-L1-femur" placeholder="0.0"></td><td>0x03</td><td><input type="text" data-persist id="off-L1-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L1-done"></td></tr>
+        <tr><td class="label">L2 (R2)</td><td>0x04</td><td><input type="text" data-persist id="off-L2-coxa" placeholder="0.0"></td><td>0x05</td><td><input type="text" data-persist id="off-L2-femur" placeholder="0.0"></td><td>0x06</td><td><input type="text" data-persist id="off-L2-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L2-done"></td></tr>
+        <tr><td class="label">L3 (R3)</td><td>0x07</td><td><input type="text" data-persist id="off-L3-coxa" placeholder="0.0"></td><td>0x08</td><td><input type="text" data-persist id="off-L3-femur" placeholder="0.0"></td><td>0x09</td><td><input type="text" data-persist id="off-L3-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L3-done"></td></tr>
+        <tr><td class="label">L4 (R4)</td><td>0x0A</td><td><input type="text" data-persist id="off-L4-coxa" placeholder="0.0"></td><td>0x0B</td><td><input type="text" data-persist id="off-L4-femur" placeholder="0.0"></td><td>0x0C</td><td><input type="text" data-persist id="off-L4-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L4-done"></td></tr>
+        <tr><td class="label">L5 (L4)</td><td>0x0D</td><td><input type="text" data-persist id="off-L5-coxa" placeholder="0.0"></td><td>0x0E</td><td><input type="text" data-persist id="off-L5-femur" placeholder="0.0"></td><td>0x0F</td><td><input type="text" data-persist id="off-L5-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L5-done"></td></tr>
+        <tr><td class="label">L6 (L3)</td><td>0x10</td><td><input type="text" data-persist id="off-L6-coxa" placeholder="0.0"></td><td>0x11</td><td><input type="text" data-persist id="off-L6-femur" placeholder="0.0"></td><td>0x12</td><td><input type="text" data-persist id="off-L6-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L6-done"></td></tr>
+        <tr><td class="label">L7 (L2)</td><td>0x13</td><td><input type="text" data-persist id="off-L7-coxa" placeholder="0.0"></td><td>0x14</td><td><input type="text" data-persist id="off-L7-femur" placeholder="0.0"></td><td>0x15</td><td><input type="text" data-persist id="off-L7-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L7-done"></td></tr>
+        <tr><td class="label">L8 (L1)</td><td>0x16</td><td><input type="text" data-persist id="off-L8-coxa" placeholder="0.0"></td><td>0x17</td><td><input type="text" data-persist id="off-L8-femur" placeholder="0.0"></td><td>0x18</td><td><input type="text" data-persist id="off-L8-tibia" placeholder="0.0"></td><td><input type="checkbox" data-persist id="off-L8-done"></td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="section">Mirror-direction (right side +1, left side −1)</h3>
+    <p class="text-mute small">Right-side servos rotate clockwise on positive command; left-side mirror counter-clockwise. IK math expects one convention. Apply: <code class="inline">final = (ik + offset) × direction</code>.</p>
+    <table class="joint-table">
+      <thead><tr><th></th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>L5</th><th>L6</th><th>L7</th><th>L8</th></tr></thead>
+      <tbody>
+        <tr><td class="label">Direction</td><td>+1</td><td>+1</td><td>+1</td><td>+1</td><td>−1</td><td>−1</td><td>−1</td><td>−1</td></tr>
+      </tbody>
+    </table>
+    <p class="text-mute small mt-1">⚠ You'll know if direction is wrong: on first power-on, the leg moves backwards from expected. Halt, flip, retry.</p>
+  </section>
+
+  <!-- ============================================ JOINT LIMITS -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P0/P1</span>
+    <span class="phase-badge p0 phase-tag">P0/P1</span>
+    <h2>3 · Servo joint-limit calibration</h2>
+    <p class="text-mute small">Each leg has a reachable range narrower than the servo's full span. Hitting a mechanical hard-stop under load breaks gear teeth.</p>
+
+    <h3 class="section">Procedure</h3>
+    <div class="proc-step"><div class="num">1</div><div class="text">Leg de-energized. You move each joint to its mechanical limit manually.</div></div>
+    <div class="proc-step"><div class="num">2</div><div class="text">Read position via bus (encoder reports even when un-powered).</div></div>
+    <div class="proc-step"><div class="num">3</div><div class="text">Record min/max per joint. Set software limits 5° inside mechanical limits for margin.</div></div>
+
+    <h3 class="section">Default limits (design.md §2)</h3>
+    <table class="data">
+      <thead><tr><th>Joint</th><th>Axis</th><th>Min</th><th>Max</th></tr></thead>
+      <tbody>
+        <tr><td>Coxa</td><td>vertical Z (yaw)</td><td class="mono">−60°</td><td class="mono">+60°</td></tr>
+        <tr><td>Femur</td><td>tangent (elevation)</td><td class="mono">−20°</td><td class="mono">+90°</td></tr>
+        <tr><td>Tibia</td><td>parallel to femur (knee)</td><td class="mono">0°</td><td class="mono">+130°</td></tr>
+      </tbody>
+    </table>
+
+    <label class="check mt-2"><input type="checkbox" data-persist id="limits-coxa-all"><span class="check-label">All 8 coxa limits recorded in joint_limits.yaml</span></label>
+    <label class="check"><input type="checkbox" data-persist id="limits-femur-all"><span class="check-label">All 8 femur limits recorded</span></label>
+    <label class="check"><input type="checkbox" data-persist id="limits-tibia-all"><span class="check-label">All 8 tibia limits recorded</span></label>
+    <label class="check"><input type="checkbox" data-persist id="limits-firmware"><span class="check-label">Firmware clamps IK output to limits, surfaces warning on excess</span></label>
+  </section>
+
+  <!-- ============================================ IMU -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P0</span>
+    <span class="phase-badge p0 phase-tag">P0</span>
+    <h2>4 · IMU calibration (BNO086)</h2>
+
+    <h3 class="section">Accelerometer + gyroscope (auto)</h3>
+    <label class="check"><input type="checkbox" data-persist id="imu-still"><span class="check-label">Leave robot stationary for 60 s after power-on · accel + gyro auto-calibrate</span></label>
+
+    <h3 class="section">Magnetometer (manual figure-8)</h3>
+    <div class="proc-step"><div class="num">1</div><div class="text">Power up BNO086 in calibration mode.</div></div>
+    <div class="proc-step"><div class="num">2</div><div class="text">Pick up the robot, hold in your hands.</div></div>
+    <div class="proc-step"><div class="num">3</div><div class="text">Move through a figure-8 pattern, rolling all axes, for ~30 s.</div></div>
+    <div class="proc-step"><div class="num">4</div><div class="text">Verify status reaches "fully calibrated" via BNO086 SH-2 self-status register.</div></div>
+
+    <label class="check mt-2"><input type="checkbox" data-persist id="imu-mag"><span class="check-label">Magnetometer figure-8 completed, status = fully calibrated</span></label>
+    <label class="check"><input type="checkbox" data-persist id="imu-level"><span class="check-label">Verify: robot on level surface → roll, pitch = 0 ± 0.5°</span></label>
+    <p class="text-warn small mt-2">⚠ Magnetometer unreliable near 24 servos. Mount IMU as far from them as possible (top of carapace). If results bad, disable mag in fusion mode (yaw drifts but works in motor-noisy env).</p>
+  </section>
+
+  <!-- ============================================ FSR -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P1</span>
+    <span class="phase-badge p1 phase-tag">P1</span>
+    <h2>8 · Foot FSR calibration</h2>
+    <p class="text-mute small">Each FSR402 has different resistance under the same applied force. Baseline + scale per foot needed for consistent contact detection.</p>
+
+    <h3 class="section">Procedure</h3>
+    <div class="proc-step"><div class="num">1</div><div class="text">Robot powered up, legs in air on walk-in-place stand. Record each FSR's unloaded raw ADC value (the baseline).</div></div>
+    <div class="proc-step"><div class="num">2</div><div class="text">Press each foot with 1 kg load on a scale. Record loaded ADC value.</div></div>
+    <div class="proc-step"><div class="num">3</div><div class="text">Per-foot scale: <code class="inline">force_N = (raw_adc − baseline) × scale_factor</code> where scale_factor makes 1 kg = ~10 N.</div></div>
+    <div class="proc-step"><div class="num">4</div><div class="text">Threshold: 30% of calibrated 1 kg value (~3 N contact). Below = "in air", above = "in contact".</div></div>
+
+    <h3 class="section">Per-foot values</h3>
+    <table class="joint-table">
+      <thead><tr><th>Foot</th><th>Leg</th><th>Pin</th><th>Baseline (raw)</th><th>1 kg loaded (raw)</th><th>Scale factor</th><th>Threshold (raw)</th><th>✓</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>L1</td><td>A0</td><td><input type="text" data-persist id="fsr1-base" placeholder="—"></td><td><input type="text" data-persist id="fsr1-load" placeholder="—"></td><td><input type="text" data-persist id="fsr1-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr1-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr1-done"></td></tr>
+        <tr><td>2</td><td>L2</td><td>A1</td><td><input type="text" data-persist id="fsr2-base" placeholder="—"></td><td><input type="text" data-persist id="fsr2-load" placeholder="—"></td><td><input type="text" data-persist id="fsr2-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr2-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr2-done"></td></tr>
+        <tr><td>3</td><td>L3</td><td>A2</td><td><input type="text" data-persist id="fsr3-base" placeholder="—"></td><td><input type="text" data-persist id="fsr3-load" placeholder="—"></td><td><input type="text" data-persist id="fsr3-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr3-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr3-done"></td></tr>
+        <tr><td>4</td><td>L4</td><td>A3</td><td><input type="text" data-persist id="fsr4-base" placeholder="—"></td><td><input type="text" data-persist id="fsr4-load" placeholder="—"></td><td><input type="text" data-persist id="fsr4-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr4-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr4-done"></td></tr>
+        <tr><td>5</td><td>L5</td><td>A4</td><td><input type="text" data-persist id="fsr5-base" placeholder="—"></td><td><input type="text" data-persist id="fsr5-load" placeholder="—"></td><td><input type="text" data-persist id="fsr5-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr5-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr5-done"></td></tr>
+        <tr><td>6</td><td>L6</td><td>A5</td><td><input type="text" data-persist id="fsr6-base" placeholder="—"></td><td><input type="text" data-persist id="fsr6-load" placeholder="—"></td><td><input type="text" data-persist id="fsr6-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr6-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr6-done"></td></tr>
+        <tr><td>7</td><td>L7</td><td>A6</td><td><input type="text" data-persist id="fsr7-base" placeholder="—"></td><td><input type="text" data-persist id="fsr7-load" placeholder="—"></td><td><input type="text" data-persist id="fsr7-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr7-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr7-done"></td></tr>
+        <tr><td>8</td><td>L8</td><td>A7</td><td><input type="text" data-persist id="fsr8-base" placeholder="—"></td><td><input type="text" data-persist id="fsr8-load" placeholder="—"></td><td><input type="text" data-persist id="fsr8-scale" placeholder="—"></td><td><input type="text" data-persist id="fsr8-thresh" placeholder="—"></td><td><input type="checkbox" data-persist id="fsr8-done"></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================ INA226 -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P1</span>
+    <span class="phase-badge p1 phase-tag">P1</span>
+    <h2>9 · INA226 calibration</h2>
+    <p class="text-mute small">INA226 has a CALIBRATION register set by shunt resistor value + expected current range. For 0.002 Ω shunt and 30 A range:</p>
+    <pre class="block">Current_LSB = 30 A / 32768 = 0.000915 A/bit
+CAL = 0.00512 / (Current_LSB × 0.002) = 2796</pre>
+    <p class="text-mute small mt-2">Write 2796 to register 0x05 (CALIBRATION).</p>
+
+    <label class="check"><input type="checkbox" data-persist id="ina-buck1"><span class="check-label">Buck #1 (servo rail, 12 V) · CAL set · sanity-checked against bench supply</span></label>
+    <label class="check"><input type="checkbox" data-persist id="ina-buck2"><span class="check-label">Buck #2 (Jetson, 5 V) · CAL set · sanity-checked</span></label>
+    <label class="check"><input type="checkbox" data-persist id="ina-buck3"><span class="check-label">Buck #3 (Teensy, 5 V) · CAL set · sanity-checked</span></label>
+    <label class="check"><input type="checkbox" data-persist id="ina-buck4"><span class="check-label">Buck #4 (Pico, 3.3 V) · CAL set · sanity-checked</span></label>
+  </section>
+
+  <!-- ============================================ Vision -->
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P2</span>
+    <span class="phase-badge p2 phase-tag">P2</span>
+    <h2>5 · RealSense D435i</h2>
+    <p class="text-mute small">Ships factory-calibrated · usually fine. Recalibrate after hard drop or depth quality degrades (banding, noisy regions).</p>
+    <pre class="block">rs-fw-update -l           # check firmware
+rs-fw-update -f &lt;fw.bin&gt;  # update if needed
+rs-enumerate-devices       # confirm device present
+realsense-viewer           # GUI: Advanced Mode → Calibration → Run</pre>
+    <label class="check mt-2"><input type="checkbox" data-persist id="rs-firmware"><span class="check-label">Firmware up-to-date</span></label>
+    <label class="check"><input type="checkbox" data-persist id="rs-dynamic"><span class="check-label">Dynamic calibration completed (textured wall, ~60 s)</span></label>
+    <label class="check"><input type="checkbox" data-persist id="rs-intrinsic"><span class="check-label">Intrinsic + extrinsic via <code class="inline">camera_calibration</code> + checkerboard, transform in URDF</span></label>
+  </section>
+
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P3</span>
+    <span class="phase-badge p3 phase-tag">P3</span>
+    <h2>6 · Livox MID-360</h2>
+    <p class="text-mute small">Factory calibrated. Verify on first use, then measure mechanical transform from LiDAR mount to base_link with calipers + inclinometer (5 mm / 1° accuracy is enough to start).</p>
+    <label class="check"><input type="checkbox" data-persist id="livox-driver"><span class="check-label">livox_ros_driver2 installed, <code class="inline">/livox/lidar</code> echoes ~200k pts/s</span></label>
+    <label class="check"><input type="checkbox" data-persist id="livox-transform"><span class="check-label">Mechanical transform measured → base_link, in URDF</span></label>
+    <label class="check"><input type="checkbox" data-persist id="livox-optimize"><span class="check-label">Optional: optimize against fiducial ground-truth (only if SLAM accuracy unacceptable)</span></label>
+  </section>
+
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P3</span>
+    <span class="phase-badge p3 phase-tag">P3</span>
+    <h2>11 · robot_localization EKF tuning</h2>
+    <p class="text-mute small">EKF fuses IMU + foot odometry + LiDAR odometry → <code class="inline">/odom</code>. Many tunable covariances. Default settings rarely work well. Plan a session, expect 2-4 hours.</p>
+
+    <h3 class="section">Quick-tune procedure</h3>
+    <div class="proc-step"><div class="num">1</div><div class="text">Walk robot a known distance (e.g., 5 m forward).</div></div>
+    <div class="proc-step"><div class="num">2</div><div class="text">Compare EKF reported distance to ground truth.</div></div>
+    <div class="proc-step"><div class="num">3</div><div class="text">Over-estimates → increase IMU covariance OR decrease foot-odom covariance. Under-estimates → opposite. Iterate.</div></div>
+
+    <label class="check mt-2"><input type="checkbox" data-persist id="ekf-doc"><span class="check-label">Read robot_localization Migration &amp; Tuning Guide first</span></label>
+    <label class="check"><input type="checkbox" data-persist id="ekf-tune"><span class="check-label">EKF tuned · &lt;10% drift over 5 m</span></label>
+  </section>
+
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P3 advanced</span>
+    <span class="phase-badge p3 phase-tag">P3</span>
+    <h2>12 · Camera↔LiDAR extrinsic</h2>
+    <p class="text-mute small">Mechanical measurement gives ~1-2 cm error. For tight projection: use a <code class="inline">lidar_camera_calibration</code> ROS 2 package, point both at a checkerboard, solve.</p>
+    <p class="text-mute small"><strong>Skip this if SLAM works fine without it.</strong> Most indoor recon tolerates 1-2 cm misalignment.</p>
+  </section>
+
+  <section class="card cal-card mt-4">
+    <span class="card-tag">P4</span>
+    <span class="phase-badge p4 phase-tag">P4</span>
+    <h2>10 · Mic array timing</h2>
+    <p class="text-mute small">DoA measures sub-millisecond timing differences. Mics must have known geometry + low audio path latency variance.</p>
+    <label class="check"><input type="checkbox" data-persist id="mic-pos"><span class="check-label">Mic positions in body frame measured, stored in mic_array.yaml (or use UMA-8 factory geometry)</span></label>
+    <label class="check"><input type="checkbox" data-persist id="mic-sync"><span class="check-label">Click test: generate sound, verify 4 channels capture within expected time window</span></label>
+    <label class="check"><input type="checkbox" data-persist id="mic-accuracy"><span class="check-label">DoA accuracy: 4 azimuths (N, E, S, W) reported within ±10° of truth</span></label>
+  </section>
+
+  <!-- Re-calibration triggers -->
+  <h2 class="section">Re-calibration triggers (calibration.md §14)</h2>
+  <table class="data">
+    <thead><tr><th>Event</th><th>Re-calibrate</th></tr></thead>
+    <tbody>
+      <tr><td>Servo replaced</td><td>Servo offset + joint limits (that servo only)</td></tr>
+      <tr><td>Leg crashed / impact</td><td>All servos in that leg</td></tr>
+      <tr><td>IMU replaced</td><td>IMU mag cal + EKF re-tune</td></tr>
+      <tr><td>RealSense dropped</td><td>Dynamic calibration</td></tr>
+      <tr><td>FSR replaced</td><td>Foot FSR baseline (that foot)</td></tr>
+      <tr><td>Robot shipped / traveled</td><td>Full quick-check all sensors</td></tr>
+      <tr><td>First power-on after assembly</td><td>Everything</td></tr>
+    </tbody>
+  </table>
+
+  <footer class="footer">source: calibration.md §1-§14 · state persists locally · namespace <code class="inline">spiderbot.calibration</code></footer>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

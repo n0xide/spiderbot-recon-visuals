@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connector pinouts · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .connector-card { position: relative; }
+  .connector-svg { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto; }
+  .pin-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 12px; }
+  .pin-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+  .pin-table td:first-child { width: 32px; color: var(--amber); font-weight: 600; }
+  .pin-table td.color-cell { width: 90px; }
+  .color-chip { display: inline-block; width: 14px; height: 14px; border-radius: 2px; vertical-align: middle; margin-right: 6px; border: 1px solid var(--border-hi); }
+
+  .crimping-do { color: var(--ok); }
+  .crimping-dont { color: var(--danger); }
+</style>
+</head>
+<body data-ns="connectors">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ connector pinouts</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html" class="active">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <div class="banner">
+    <span class="banner-tag">Bench reference</span>
+    <span>Pinouts shown from the connector face (the side you push the pin into). Mating side is mirror. Verify continuity with a meter before powering.</span>
+  </div>
+
+  <!-- ============================================ GX12 6-pin (leg connector) -->
+  <h2 class="section">GX12 6-pin · modular leg interface (design.md §11.1)</h2>
+  <div class="grid grid-2">
+    <div class="card connector-card">
+      <span class="card-tag">female (chassis side)</span>
+      <h2>GX12-6 pinout · view from front</h2>
+      <svg class="connector-svg" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" font-family="var(--mono)">
+        <!-- Outer locking ring -->
+        <circle cx="120" cy="120" r="100" fill="#1a1d22" stroke="#B8B8B8" stroke-width="3"/>
+        <circle cx="120" cy="120" r="92" fill="none" stroke="#3a4048" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="120" y="20" text-anchor="middle" font-size="10" fill="#8a8f97">M12 thread · IP67</text>
+
+        <!-- Key notch at top -->
+        <rect x="115" y="32" width="10" height="14" fill="#0d0e10" stroke="#B8B8B8"/>
+        <text x="120" y="58" text-anchor="middle" font-size="9" fill="#C45A1F">KEY ▲</text>
+
+        <!-- Six pins arranged in a circle around center -->
+        <!-- Standard GX12-6: 5 around perimeter + 1 in center -->
+        <g>
+          <!-- Center pin -->
+          <circle cx="120" cy="120" r="12" fill="#222" stroke="#d0a02a" stroke-width="2"/>
+          <text x="120" y="124" text-anchor="middle" font-size="14" fill="#d0a02a" font-weight="700">1</text>
+
+          <!-- 5 pins in a ring -->
+          <circle cx="120" cy="65" r="10" fill="#222" stroke="#d04a3a" stroke-width="2"/>
+          <text x="120" y="69" text-anchor="middle" font-size="12" fill="#d04a3a" font-weight="700">2</text>
+
+          <circle cx="172" cy="100" r="10" fill="#222" stroke="#3a3a3a" stroke-width="2"/>
+          <text x="172" y="104" text-anchor="middle" font-size="12" fill="#999" font-weight="700">3</text>
+
+          <circle cx="152" cy="170" r="10" fill="#222" stroke="#5fa84a" stroke-width="2"/>
+          <text x="152" y="174" text-anchor="middle" font-size="12" fill="#5fa84a" font-weight="700">4</text>
+
+          <circle cx="88" cy="170" r="10" fill="#222" stroke="#5a90c8" stroke-width="2"/>
+          <text x="88" y="174" text-anchor="middle" font-size="12" fill="#5a90c8" font-weight="700">5</text>
+
+          <circle cx="68" cy="100" r="10" fill="#222" stroke="#8a78d0" stroke-width="2"/>
+          <text x="68" y="104" text-anchor="middle" font-size="12" fill="#8a78d0" font-weight="700">6</text>
+        </g>
+      </svg>
+
+      <table class="pin-table">
+        <tr><td>1</td><td class="color-cell"><span class="color-chip" style="background:#d0a02a"></span>YEL</td><td>BUS DATA</td><td>LX-224HV signal · TTL half-duplex</td></tr>
+        <tr><td>2</td><td class="color-cell"><span class="color-chip" style="background:#d04a3a"></span>RED</td><td>12 V</td><td>servo rail · 12 AWG</td></tr>
+        <tr><td>3</td><td class="color-cell"><span class="color-chip" style="background:#222"></span>BLK</td><td>GND</td><td>star ground · 12 AWG</td></tr>
+        <tr><td>4</td><td class="color-cell"><span class="color-chip" style="background:#5fa84a"></span>GRN</td><td>FSR signal</td><td>foot force-sensor analog</td></tr>
+        <tr><td>5</td><td class="color-cell"><span class="color-chip" style="background:#5a90c8"></span>BLU</td><td>spare</td><td>future VL53L1X foot ToF, or FSR ref</td></tr>
+        <tr><td>6</td><td class="color-cell"><span class="color-chip" style="background:#8a78d0"></span>VIO</td><td>spare</td><td>future leg-edge LED, etc.</td></tr>
+      </table>
+      <p class="text-mute small mt-2">Field-replace time: <strong>~30 s</strong> with a 2.5 mm hex driver. Locking ring tightens hand-tight + ¼ turn with the spanner that ships with the connector.</p>
+    </div>
+
+    <div class="card">
+      <h2>Why GX12 over alternatives</h2>
+      <table class="data small">
+        <thead><tr><th>Connector</th><th>Cost</th><th>IP rating</th><th>Locking</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GX12 (pick)</strong></td><td>$5/pair</td><td>IP67</td><td>threaded</td><td><span class="pill ok">field-grade</span></td></tr>
+          <tr><td>JST-XH 6-pin</td><td>$0.10</td><td>—</td><td>friction</td><td><span class="pill warn">indoor only</span></td></tr>
+          <tr><td>JST-VH (locking)</td><td>$0.50</td><td>—</td><td>tab</td><td><span class="pill warn">no IP</span></td></tr>
+          <tr><td>Amphenol Pegasus</td><td>$15+</td><td>IP68</td><td>push-pull</td><td><span class="pill">overkill</span></td></tr>
+          <tr><td>Mil-spec MIL-DTL-38999</td><td>$200+</td><td>IP67</td><td>threaded</td><td><span class="pill">over-engineered</span></td></tr>
+        </tbody>
+      </table>
+      <p class="text-mute small mt-2">GX12 hits the sweet spot for "industrial-prototype field-replaceable" without the price tag.</p>
+    </div>
+  </div>
+
+  <!-- ============================================ LX-224HV bus cable -->
+  <h2 class="section">LX-224HV servo bus cable</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>3-pin Hiwonder daisy-chain</h2>
+      <svg class="connector-svg" viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" font-family="var(--mono)">
+        <rect x="40" y="20" width="160" height="60" rx="4" fill="#1a1d22" stroke="#B8B8B8" stroke-width="2"/>
+        <circle cx="80" cy="50" r="10" fill="#222" stroke="#222"/>
+        <text x="80" y="54" text-anchor="middle" font-size="12" fill="#d7dade" font-weight="700">1</text>
+        <circle cx="120" cy="50" r="10" fill="#222" stroke="#d04a3a"/>
+        <text x="120" y="54" text-anchor="middle" font-size="12" fill="#d04a3a" font-weight="700">2</text>
+        <circle cx="160" cy="50" r="10" fill="#222" stroke="#d0a02a"/>
+        <text x="160" y="54" text-anchor="middle" font-size="12" fill="#d0a02a" font-weight="700">3</text>
+        <text x="120" y="98" text-anchor="middle" font-size="9" fill="#8a8f97">JST-style 2.54 mm pitch · keyed</text>
+      </svg>
+      <table class="pin-table">
+        <tr><td>1</td><td class="color-cell"><span class="color-chip" style="background:#222"></span>BLK</td><td>GND</td><td>star ground</td></tr>
+        <tr><td>2</td><td class="color-cell"><span class="color-chip" style="background:#d04a3a"></span>RED</td><td>VIN</td><td>11.1-13.5 V · 12 V nominal</td></tr>
+        <tr><td>3</td><td class="color-cell"><span class="color-chip" style="background:#d0a02a"></span>YEL</td><td>BUS</td><td>half-duplex TTL · ≤1 Mbaud</td></tr>
+      </table>
+      <p class="text-mute small mt-2">Servos daisy-chain — each servo has IN + OUT 3-pin sockets. The OUT plugs into the next servo's IN.</p>
+    </div>
+
+    <div class="card">
+      <h2>Sub-bus star wiring</h2>
+      <p class="text-mute small">From the chassis hub, one cable runs to the first servo of each sub-bus. From there it daisy-chains through the leg's 3 servos, jumps to the second leg's coxa via the GX12 connector spare pin (or a short jumper at the GX12), and chains through that leg.</p>
+      <pre class="block">Hub ──┬── 22µF + ferrite ──┬── L1 coxa → L1 femur → L1 tibia
+      │                    └── L2 coxa → L2 femur → L2 tibia    (sub-bus A)
+      │
+      ├── 22µF + ferrite ──┬── L3 → L4    (sub-bus B)
+      ├── 22µF + ferrite ──┬── L5 → L6    (sub-bus C)
+      └── 22µF + ferrite ──┬── L7 → L8    (sub-bus D)</pre>
+    </div>
+  </div>
+
+  <!-- ============================================ Sensor breakouts -->
+  <h2 class="section">Sensor breakouts · what wires where</h2>
+
+  <div class="grid grid-2">
+
+    <div class="card">
+      <h2>BNO086 (Adafruit #4754) → I²C0</h2>
+      <table class="pin-table">
+        <tr><td>VIN</td><td>3.3 V</td><td>Teensy 3V3</td></tr>
+        <tr><td>GND</td><td>GND</td><td>star ground</td></tr>
+        <tr><td>SDA</td><td>I²C SDA</td><td>Teensy pin 18 + 4.7 kΩ to 3V3</td></tr>
+        <tr><td>SCL</td><td>I²C SCL</td><td>Teensy pin 19 + 4.7 kΩ to 3V3</td></tr>
+        <tr><td>INT</td><td>data-ready</td><td>Teensy pin 33</td></tr>
+        <tr><td>RST</td><td>reset</td><td>Teensy pin 34</td></tr>
+        <tr><td>PS0</td><td>protocol sel</td><td>tie LOW = I²C mode</td></tr>
+        <tr><td>PS1</td><td>protocol sel</td><td>tie LOW = I²C mode (UART = HIGH)</td></tr>
+      </table>
+      <p class="text-mute small mt-2">I²C address: <code class="inline">0x4A</code> by default. <code class="inline">0x4B</code> if ADR pad bridged.</p>
+    </div>
+
+    <div class="card">
+      <h2>VL53L1X (×3 belly + flanks) → I²C0</h2>
+      <table class="pin-table">
+        <tr><td>VIN</td><td>3.3 V</td><td>Teensy 3V3</td></tr>
+        <tr><td>GND</td><td>GND</td><td>star ground</td></tr>
+        <tr><td>SDA</td><td>I²C SDA</td><td>shared bus with BNO086 (pin 18)</td></tr>
+        <tr><td>SCL</td><td>I²C SCL</td><td>shared bus with BNO086 (pin 19)</td></tr>
+        <tr><td>XSHUT</td><td>shutdown</td><td>belly→35, L-flank→36, R-flank→37</td></tr>
+      </table>
+      <p class="text-mute small mt-2">All 3 ship at <code class="inline">0x29</code>. Boot sequence: hold all XSHUT low, then bring one high at a time, re-address each via I²C.</p>
+    </div>
+
+    <div class="card">
+      <h2>INA226 (×4 rail telemetry) → I²C1</h2>
+      <table class="pin-table">
+        <tr><td>VBUS</td><td>rail+</td><td>monitored rail's positive (12V/5V/etc)</td></tr>
+        <tr><td>GND</td><td>rail−</td><td>monitored rail's ground</td></tr>
+        <tr><td>VS+</td><td>shunt+</td><td>shunt resistor high side</td></tr>
+        <tr><td>VS−</td><td>shunt−</td><td>shunt resistor low side</td></tr>
+        <tr><td>VDD</td><td>3.3 V</td><td>logic power · separate from VBUS</td></tr>
+        <tr><td>SDA</td><td>I²C1 SDA</td><td>Teensy pin 24 + 4.7 kΩ</td></tr>
+        <tr><td>SCL</td><td>I²C1 SCL</td><td>Teensy pin 25 + 4.7 kΩ</td></tr>
+        <tr><td>ALERT</td><td>open-drain</td><td>Teensy pin 30 (any INA226 trips → safe-pose)</td></tr>
+        <tr><td>A0/A1</td><td>addr select</td><td>0x40 / 0x41 / 0x44 / 0x45 (4 unique)</td></tr>
+      </table>
+      <p class="text-mute small mt-2">Use a separate breakout per rail. <span class="text-warn">⚠ Each INA226 sees its own VBUS — don't bridge VBUS pins.</span></p>
+    </div>
+
+    <div class="card">
+      <h2>FSR402 (foot contact) → Teensy ADC</h2>
+      <pre class="block">3.3V ──┬── 10 kΩ ──┬── ADC pin (A0..A7)
+       │           │
+       │          FSR402  (variable 100k unpressed → 1k at 1kg)
+       │           │
+      GND ─────────┘</pre>
+      <p class="text-mute small mt-2">Voltage divider: unpressed ≈ 0.3 V (low), pressed ≈ 3.0 V (high). 12-bit ADC at 1 kHz. Contact threshold ~1.5 V in firmware.</p>
+      <p class="text-mute small">FSR sits between the TPU heel pad and the tibia tip. Wires run inside the tibia → coxa → GX12 pin 4.</p>
+    </div>
+
+    <div class="card">
+      <h2>RealSense D435i → Jetson USB 3</h2>
+      <table class="pin-table">
+        <tr><td>USB-C</td><td>USB 3.2</td><td>front USB on devkit · 5V powered by Jetson</td></tr>
+      </table>
+      <p class="text-mute small mt-2">Mount on dorsal carapace facing forward. Active IR projector + stereo cameras + onboard 6-axis IMU. Drivers: <code class="inline">librealsense2</code> + <code class="inline">realsense-ros</code> ROS 2 package.</p>
+    </div>
+
+    <div class="card">
+      <h2>Livox MID-360 → Jetson Eth</h2>
+      <table class="pin-table">
+        <tr><td>ETH</td><td>RJ45 1 Gbit</td><td>shielded Cat6, ≤1 m</td></tr>
+        <tr><td>PWR</td><td>10–15 V · 1.2 A</td><td>tap from Buck #1 (12 V) directly · NOT through 5 V</td></tr>
+        <tr><td>GND</td><td>shielded</td><td>star ground · shield grounded at one end only</td></tr>
+      </table>
+      <p class="text-mute small mt-2">Static IP <code class="inline">192.168.1.5/24</code> (Livox default). Configure Jetson Eth to <code class="inline">192.168.1.50/24</code>. Verify with <code class="inline">ping 192.168.1.5</code>.</p>
+    </div>
+
+    <div class="card">
+      <h2>FLIR Lepton 3.5 + PureThermal 2 → Jetson USB 2</h2>
+      <table class="pin-table">
+        <tr><td>USB-mini</td><td>USB 2.0</td><td>rear USB on devkit</td></tr>
+      </table>
+      <p class="text-mute small mt-2">UVC class device → <code class="inline">/dev/video*</code>. ROS 2 driver: <code class="inline">flir_lepton_ros2</code> or GroupGets' fork.</p>
+    </div>
+
+    <div class="card">
+      <h2>RYLR998 LoRa → Pico 2 W</h2>
+      <table class="pin-table">
+        <tr><td>VCC</td><td>3.3 V</td><td>Pico 3V3 · do NOT use 5V</td></tr>
+        <tr><td>GND</td><td>GND</td><td>star ground</td></tr>
+        <tr><td>TXD</td><td>module TX</td><td>Pico GP1 (UART0 RX)</td></tr>
+        <tr><td>RXD</td><td>module RX</td><td>Pico GP0 (UART0 TX)</td></tr>
+        <tr><td>RST</td><td>reset</td><td>Pico GP6 · 10 kΩ pull-up to 3V3</td></tr>
+        <tr><td>NSS</td><td>not used</td><td>AT-command mode</td></tr>
+      </table>
+      <p class="text-mute small mt-2">AT commands: <code class="inline">AT+SEND=5,Hello\r\n</code>. Pico bridges Jetson UART (<code class="inline">/dev/ttyTHS3</code>) ↔ LoRa.</p>
+    </div>
+
+  </div>
+
+  <!-- ============================================ Power harness color code -->
+  <h2 class="section">Power harness color code (consistency across the whole build)</h2>
+  <div class="card">
+    <table class="data">
+      <thead><tr><th>Wire</th><th>Function</th><th>Gauge</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td><span class="color-chip" style="background:#d04a3a"></span> RED solid</td><td>24 V (battery rail)</td><td>12 AWG silicone</td><td>battery → estop → buck inputs</td></tr>
+        <tr><td><span class="color-chip" style="background:#C45A1F"></span> ORANGE</td><td>12 V (servo rail)</td><td>12 AWG silicone</td><td>Buck #1 → cap bank → sub-bus power taps</td></tr>
+        <tr><td><span class="color-chip" style="background:#d0a02a"></span> YELLOW</td><td>signal · bus DATA</td><td>22 AWG</td><td>LX-224HV bus, sensor data lines</td></tr>
+        <tr><td><span class="color-chip" style="background:#5fa84a"></span> GREEN</td><td>5 V (Jetson + Teensy rails)</td><td>18 AWG / 22 AWG</td><td>Buck #2 + Buck #3</td></tr>
+        <tr><td><span class="color-chip" style="background:#5a90c8"></span> BLUE</td><td>3.3 V (Pico rail)</td><td>22 AWG</td><td>Buck #4 + sensor breakouts</td></tr>
+        <tr><td><span class="color-chip" style="background:#8a78d0"></span> PURPLE</td><td>I²C bus (SDA/SCL)</td><td>22 AWG</td><td>BNO086, VL53L1X, INA226 buses</td></tr>
+        <tr><td><span class="color-chip" style="background:#222;border-color:#999"></span> BLACK</td><td>GND / 0 V</td><td>match positive</td><td>star ground at chassis hub</td></tr>
+      </tbody>
+    </table>
+    <p class="text-mute small mt-2">Why this matters: in the field, six months from now, you'll be diagnosing a fault by following wires. <strong>Consistent color codes save 30+ minutes per debug session.</strong></p>
+  </div>
+
+  <!-- Crimping rules -->
+  <h2 class="section">Crimping & wiring DOs and DON'Ts</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 class="crimping-do">✓ DO</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>Tin wire ends with solder if going into screw terminals (not for crimps — solder makes crimps brittle)</li>
+        <li>Heat-shrink every solder joint on power wiring</li>
+        <li>Use the Klein 3000CRKIT or SOMELINE ratchet crimper — Klein for power, SOMELINE for 22-32 AWG signal</li>
+        <li>Pull-test every crimp at 2× expected mechanical stress</li>
+        <li>Label both ends of each cable with a Brother PT label (or vinyl)</li>
+        <li>Run +V and GND as a twisted pair where currents are dynamic (servo bus)</li>
+        <li>Star-ground at the chassis hub: one common ground point, single 12 AWG drop to battery negative</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="crimping-dont">✗ DON'T</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>Solder a crimp barrel — solder wicks up the wire and creates a stress concentration that fatigue-fails</li>
+        <li>Splice power wires with twist + tape — always crimp or solder-and-heatshrink</li>
+        <li>Run signal cables under servos — magnetic interference corrupts data lines</li>
+        <li>Re-use crimped pins from old harnesses — the deformed brass cracks on the second crimp</li>
+        <li>Use solid-core wire for anything moving (legs!) — solid core fatigue-fails. Stranded silicone for everything</li>
+        <li>Use uninsulated banana plugs on a 12 V bus — a slip and you weld your meter probe</li>
+        <li>Forget to disconnect the battery before any wiring change</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer class="footer">source: schematic.md §3-§7 · design.md §11.1 · safety.md §3</footer>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

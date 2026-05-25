@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOM tracker · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .bom-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .bom-table th, .bom-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .bom-table thead th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); background: var(--bg-elev); position: sticky; top: 0; }
+  .bom-table tbody tr:hover { background: var(--bg-card-hi); }
+  .bom-table .qty, .bom-table .unit, .bom-table .ext { font-family: var(--mono); text-align: right; }
+  .bom-table .ext { color: var(--amber); }
+  .bom-table .part { font-weight: 600; }
+  .bom-table .why { color: var(--text-mute); font-size: 11px; max-width: 480px; }
+  .bom-table tr.section-row td { background: var(--bg-elev); padding: 14px 8px 6px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--amber); }
+  .bom-table tr.on-hand td { color: var(--text-dim); }
+  .bom-table tr.on-hand td.part { color: var(--text-mute); }
+  .bom-table tr.rejected td { color: var(--text-dim); opacity: 0.55; }
+  .bom-table tr.rejected td.part { text-decoration: line-through; }
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .filter-bar button.active { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+  .status-col { width: 40px; text-align: center; }
+  .phase-col { width: 50px; }
+</style>
+</head>
+<body data-ns="bom">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ BOM tracker</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html" class="active">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html">Safety</a>
+    </nav>
+  </header>
+
+  <!-- Spend totals -->
+  <section class="grid grid-4 mt-2">
+    <div class="stat">
+      <span class="label">Spent</span>
+      <span class="value" data-spend-rollup="input[data-cost]:checked">$0</span>
+      <span class="delta">items marked ordered/on-hand</span>
+    </div>
+    <div class="stat">
+      <span class="label">P0 ordered</span>
+      <span class="value" data-spend-rollup="input[data-phase='P0'][data-cost]:checked">$0</span>
+      <span class="delta">of ~$400 target</span>
+    </div>
+    <div class="stat">
+      <span class="label">P1 ordered</span>
+      <span class="value" data-spend-rollup="input[data-phase='P1'][data-cost]:checked">$0</span>
+      <span class="delta">of ~$2,200 delta</span>
+    </div>
+    <div class="stat">
+      <span class="label">Reset</span>
+      <button class="mt-1" data-reset-ns>Clear saved state</button>
+    </div>
+  </section>
+
+  <!-- Filter bar -->
+  <div class="filter-bar mt-3">
+    <span class="text-mute mono small">FILTER PHASE:</span>
+    <button data-filter="all" class="active">All</button>
+    <button data-filter="P0">P0</button>
+    <button data-filter="P1">P1</button>
+    <button data-filter="P2">P2</button>
+    <button data-filter="P3">P3</button>
+    <button data-filter="P4">P4</button>
+    <button data-filter="P5">P5</button>
+    <span class="spacer"></span>
+    <label class="check small" style="padding:0"><input type="checkbox" id="hide-onhand"><span class="check-label">Hide on-hand</span></label>
+    <label class="check small" style="padding:0"><input type="checkbox" id="hide-rejected" checked><span class="check-label">Hide rejected</span></label>
+  </div>
+
+  <div class="card">
+    <span class="card-tag">parts list</span>
+    <table class="bom-table">
+      <thead>
+        <tr>
+          <th class="status-col">✓</th>
+          <th class="phase-col">Phase</th>
+          <th>Part</th>
+          <th>Qty</th>
+          <th>Unit $</th>
+          <th>Ext $</th>
+          <th>Why this part / source</th>
+        </tr>
+      </thead>
+      <tbody id="bom-body">
+        <!-- populated by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Budget alternatives -->
+  <h2 class="section">Budget alternatives</h2>
+  <table class="data">
+    <thead><tr><th>Change</th><th>Delta</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td>Hexapod (6 legs) instead of octopod</td><td class="num text-ok">−$250</td><td>−25% software complexity, less stable in single-leg-swing</td></tr>
+      <tr><td>Dynamixel XL430-W250-T instead of LX-224HV</td><td class="num text-danger">+$1,800</td><td>Academic gold standard, 0.5° backlash vs 1.5°</td></tr>
+      <tr><td>RPLidar S2 instead of Livox MID-360</td><td class="num text-ok">−$500</td><td>2D only, loses 3D mapping, spinning mirror (vibration risk)</td></tr>
+      <tr><td>Skip thermal (defer Lepton)</td><td class="num text-ok">−$300</td><td>Loses the recon differentiator — don't skip</td></tr>
+      <tr><td>Skip mic array</td><td class="num text-ok">−$269</td><td>Loses DoA capability — robot can't hear-and-aim</td></tr>
+    </tbody>
+  </table>
+  <p class="text-mute small mt-1">Cheapest viable path: <span class="text-amber">~$3,500</span> · Cheapest still-marketable path: <span class="text-amber">~$3,000</span></p>
+
+  <!-- Sourcing notes -->
+  <h2 class="section">Sourcing notes</h2>
+  <div class="grid grid-2">
+    <div class="card"><h3>Hiwonder LX-224HV</h3><p class="text-mute small">hiwonder.com direct or Robotshop. <span class="text-warn">Avoid Amazon resellers</span> — counterfeits exist for servo lots.</p></div>
+    <div class="card"><h3>Dynamixel</h3><p class="text-mute small">Robotis direct or Trossen Robotics (NA distributor).</p></div>
+    <div class="card"><h3>Jetson Orin Nano</h3><p class="text-mute small">NVIDIA-authorized resellers only: Arrow, SparkFun, Seeed. Stock generally OK in 2026.</p></div>
+    <div class="card"><h3>RealSense D435i</h3><p class="text-mute small">Intel direct or Mouser. <strong>D435i</strong> (with IMU) not D435 (without).</p></div>
+    <div class="card"><h3>Livox MID-360</h3><p class="text-mute small">Livox direct via DJI Enterprise. Lead time 2–4 weeks.</p></div>
+    <div class="card"><h3>FLIR Lepton 3.5 + PureThermal 2</h3><p class="text-mute small">GroupGets is the reliable source.</p></div>
+    <div class="card"><h3>PA612-CF filament</h3><p class="text-mute small">Bambu Labs store. AMS-HT compatible spool.</p></div>
+    <div class="card"><h3>Teensy 4.1</h3><p class="text-mute small">PJRC direct or Amazon (genuine).</p></div>
+  </div>
+
+  <!-- On hand -->
+  <h2 class="section">Already inventoried (don't re-buy)</h2>
+  <div class="card">
+    <ul class="text-mute small" style="margin:0;padding-left:18px">
+      <li>M2.5/M3 brass heat-set inserts kit — on hand 2026-05-11</li>
+      <li>22 AWG silicone hookup wire (6 spools)</li>
+      <li>JST-PH + JST-XH connector kits — 2026-05-11 / 2026-05-20</li>
+      <li>Klein 3000CRKIT + SOMELINE 32–20 AWG ratchet crimpers</li>
+      <li>FNIRSI DPS-150 bench PSU — 2026-05-11 (first power-on smoke testing)</li>
+      <li>FNIRSI 2D15P scope — 2026-05-14 (servo bus signal validation)</li>
+      <li>Sumnacon test leads</li>
+      <li>INA219 (in bench-rig BOM) — optional substitute for INA226 if convenient</li>
+    </ul>
+    <p class="text-mute small mt-2">Don't earmark in <code class="inline">mechatronics/inventory.md</code> until the Phase 0 commit. Speculative earmarks fragment the ledger.</p>
+  </div>
+
+  <footer class="footer">state persists in browser localStorage · namespace <code class="inline">spiderbot.bom</code></footer>
+</div>
+
+<script src="shared.js"></script>
+<script>
+// BOM data from bom.md — keep in sync if the doc changes.
+const BOM = [
+  { section: "1 · Structural & mechanical" },
+  ["filament-pa612cf", "P0", "Bambu PA612-CF filament (1 kg spool)", 2, 80, "Primary structural filament. Dry 8 h @ 80 °C before each print. Budget 1.5–2 kg incl reprints."],
+  ["filament-tpu95a", "P0", "Bambu TPU 95A HF filament (1 kg)", 1, 35, "Foot pads, strain reliefs, IMU/LiDAR vibration isolators."],
+  ["filament-petg", "P4", "Bambu PETG-HF translucent (1 kg)", 1, 25, "Dorsal accent panels for RGB diffusion, eye lenses."],
+  ["nozzle-hardened", "P0", "Hardened steel nozzle 0.4 mm", 1, 30, "X1C ships with it; P1S needs upgrade. Brass erodes in <24 h on PA612-CF.", { verify: true }],
+  ["m3-8mm", "P0", "M3 × 8 mm socket head SS, 100-pk", 1, 12, "Servo horn screws, leg joints."],
+  ["m3-12mm", "P0", "M3 × 12 mm socket head SS, 100-pk", 1, 14, "Leg-to-chassis bolts."],
+  ["m3-20mm", "P0", "M3 × 20 mm socket head SS, 50-pk", 1, 14, "Through-chassis hub assembly."],
+  ["brass-inserts", "P0", "M3 brass heat-set inserts (kit)", 1, 0, "On hand — M2.5/M3 kit inventoried 2026-05-11.", { onHand: true }],
+  ["m3-nyloc", "P0", "M3 nyloc nuts SS, 100-pk", 1, 10, "Belt-and-suspenders for high-vibration joints."],
+  ["loctite-243", "P0", "Loctite 243 blue threadlocker", 1, 8, "All servo horn screws."],
+  ["vinyl-wrap", "P5", "Vinyl wrap matte black + chrome, 12×60\" rolls", 2, 25, "Aesthetic finish. Chrome accent is the cyberpunk pop."],
+  ["gx12-1", "P0", "GX12 6-pin aviation connector pair (P0 single leg)", 1, 5, "Modular hot-swap leg connector — threaded ring, IP67. Field-replaceable in 30 s."],
+  ["gx12-7", "P1", "GX12 6-pin pair (remaining 7 legs)", 7, 5, "One per remaining leg."],
+  ["n52-magnets", "P1", "Neodymium N52 magnets, 10×5 mm", 4, 1, "Magnetic battery latch (2 pairs). ~12 kg total pull. Polarity-keyed."],
+  ["o-rings", "P4", "Silicone O-rings NBR70, 50 mm OD × 2 mm", 4, 1, "Weather sealing carapace↔chassis. IP54 splash protection."],
+  ["conformal-spray", "P4", "Conformal coating spray (MG 419D acrylic)", 1, 20, "Thin polymer over Teensy + Pico + LoRa PCBs."],
+  ["xt90-s", "P1", "XT90-S anti-spark connector kit", 1, 4, "In series with XT60 — built-in pre-charge resistor limits inrush."],
+  ["apriltag", "P2", "AprilTag 36h11 6×6 cm printed decal", 1, 0, "Free. Print on adhesive vinyl. Document ID in config/fiducials.yaml."],
+  ["handle", "P1", "Lifting handle (nylon strap + M3 mounts)", 1, 3, "Loaded robot is 4.5 kg. Or print from TPU 95A."],
+  ["nato-clamps", "P5", "NATO/Picatinny accessory clamps (M3 mount, set of 4)", 1, 15, "For dorsal payload rail — comms boom, light boom, sensor pods."],
+
+  { section: "2 · Servos & actuators" },
+  ["lx224-p0", "P0", "Hiwonder LX-224HV (single leg)", 3, 45, "30 kg·cm @ 12 V. Half-duplex TTL bus. Returns position/load/temp. Marketable servo-bus skill. Order 3 first; commit remaining 21 only after P0 sign-off."],
+  ["lx224-p1", "P1", "Hiwonder LX-224HV (remaining 21)", 21, 45, "Final commit after P0 sign-off."],
+  ["lx224-15d", "—", "Hiwonder LX-15D (rejected — too weak)", 0, 25, "Torque too low for loaded mass.", { rejected: true }],
+  ["dynamixel-xl430", "—", "Dynamixel XL430-W250-T (upgrade path)", 24, 120, "Academic gold standard. Trigger if P0 reveals LX-224HV slop unacceptable.", { rejected: true }],
+  ["mg90s", "P2", "MG90S micro servo (head gimbal pan/tilt)", 2, 4, "2-DOF for Arducam IMX477 head."],
+  ["servo-horn-25t-p0", "P0", "25T aluminum servo horn (single leg)", 3, 3, "Stronger than plastic at load-bearing joints."],
+  ["servo-horn-25t-p1", "P1", "25T aluminum servo horn (remaining)", 21, 3, ""],
+  ["bearing-block-p0", "P0", "Dual-shaft bearing block 4 mm (single leg)", 2, 2, "One per knee, opposite the tibia servo. Reduces servo gear-train load."],
+  ["bearing-block-p1", "P1", "Dual-shaft bearing block 4 mm (remaining)", 14, 2, ""],
+
+  { section: "3 · Compute & control" },
+  ["jetson", "P2", "NVIDIA Jetson Orin Nano 8GB Dev Kit", 1, 499, "67 TOPS AI compute. YOLOv8 detection >30 fps. CUDA + TensorRT acceleration."],
+  ["nvme-1tb", "P2", "M.2 2280 NVMe SSD 1 TB (WD SN770)", 1, 70, "Boot from NVMe — microSD too slow for ROS 2 + bag recording."],
+  ["teensy-41", "P0", "Teensy 4.1", 1, 32, "600 MHz Cortex-M7 + 1 MB RAM. 1 kHz IK for 24 joints with overhead = jitter immunity."],
+  ["teensy-audio", "P4", "Teensy 4.1 Audio Adapter rev D", 1, 14, "Optional — if onboard audio for SFX. Else use Jetson HDMI/USB audio."],
+  ["pico-2w", "P4", "Raspberry Pi Pico 2 W", 1, 7, "LoRa sidecar. Mirrors cyberdeck pattern."],
+  ["rylr998", "P4", "Reyax RYLR998 LoRa module 915 MHz", 1, 18, "Pairs with cyberdeck-side RYLR998. Same model both ends."],
+  ["lora-antenna", "P4", "915 MHz omni antenna SMA 3 dBi", 1, 5, "Roof-mounted on dorsal carapace."],
+
+  { section: "4 · Sensors" },
+  ["realsense-d435i", "P2", "Intel RealSense D435i", 1, 345, "RGB + active IR stereo depth + onboard 6-axis IMU. D435i (with IMU) not D435."],
+  ["livox-mid360", "P3", "Livox MID-360", 1, 899, "Solid-state 3D LiDAR. 360° × 60°, 200k pts/s, 40 m. Immune to gait vibration."],
+  ["rplidar-s2", "—", "RPLidar S2 (alternative to Livox)", 0, 399, "2D only, spinning mirror. Only if Livox budget rejected.", { rejected: true }],
+  ["lepton35", "P4", "FLIR Lepton 3.5 + PureThermal 2", 1, 300, "LWIR 160×120 thermal. The recon differentiator. Radiometric vs Lepton 3."],
+  ["imx477", "P2", "Arducam IMX477 12 MP HQ camera", 1, 50, "CSI-2 to Jetson. Streaming + ML inference target."],
+  ["imx477-lens", "P2", "Arducam 6 mm CS-mount lens", 1, 25, "Wider FOV than kit 16 mm."],
+  ["bno086", "P0", "BNO086 IMU breakout (Adafruit #4754)", 1, 25, "SH-2 protocol → minimal Teensy work. Sensor-fused quaternions."],
+  ["fsr402", "P1", "FSR402 12.7 mm (foot contact, ×8)", 8, 7, "One per foot, embedded under TPU heel pad. Gait phase + slip detect."],
+  ["vl53l1x", "P2", "VL53L1X ToF breakout (belly + 2 flanks)", 3, 12, "I²C, address remap at boot via XSHUT."],
+  ["sph0645", "P4", "SPH0645LM4H I²S MEMS mic (4-mic array)", 4, 7, "DIY DoA path. Most users will prefer UMA-8 instead."],
+  ["uma8", "P4", "MiniDSP UMA-8 7-mic array USB", 1, 269, "Pre-built UAC2 with beamforming. Strongly recommended over DIY."],
+  ["gps", "P4", "Quectel L86-M33 GPS", 1, 25, "Outdoor recon only. Skip for indoor v1.", { optional: true }],
+
+  { section: "5 · Power" },
+  ["lipo-6s", "P1", "Tattu R-Line 6S 8000 mAh LiPo", 2, 130, "Race-grade cells, 75C+ discharge. 2 packs for hot-swap. READ safety.md §1."],
+  ["lipo-charger", "P1", "ISDT D2 Mark 2 dual 6S charger", 1, 200, "Field-grade balancer. Skip if 6S charger on hand."],
+  ["lipo-bag", "P1", "LiPo fireproof bag (large)", 1, 20, "Storage + charging containment."],
+  ["xt60-kit", "P1", "XT60 male+female chassis-mount pair", 2, 4, "Battery socket on chassis."],
+  ["dps5020", "P1", "DPS5020 50 V 20 A buck (24→12 V)", 1, 50, "Servo rail. Adjustable, OLED. Verify response under inrush."],
+  ["buck-jetson", "P2", "Pololu D24V90F5 24→5 V 8 A", 1, 30, "Jetson rail."],
+  ["buck-teensy", "P0", "Pololu D24V22F5 24→5 V 3 A", 1, 20, "Teensy + sensor rail."],
+  ["buck-pico", "P4", "Buck 5→3.3 V 1 A (LM2596)", 1, 10, "Pico 2 W + RYLR998 rail (or use Pico onboard reg)."],
+  ["ina226", "P1", "INA226 I²C current/voltage monitor (×4)", 4, 8, "One per rail. ROS 2 health topic."],
+  ["cap-bank", "P1", "100 mF cap bank (4× 22 mF / 25 V low-ESR)", 1, 30, "Servo rail filter. Adjacent to bus star point."],
+  ["estop", "P1", "Red mushroom 22 mm latching estop", 1, 10, "Cuts Buck #1 EN. Mounted on dorsal carapace."],
+  ["tvs", "P1", "TVS diode array (SMAJ24CA, SMAJ5.0CA)", 5, 1, "Inductive servo kickback protection per rail."],
+  ["wire-12awg", "P1", "12 AWG silicone wire red+black 5 m ea", 1, 20, "Servo bus power runs."],
+  ["wire-22awg", "P0", "22 AWG silicone wire (on hand, 6 spools)", 1, 0, "On hand.", { onHand: true }],
+
+  { section: "6 · RGB / display / immersion" },
+  ["ws2812b", "P5", "WS2812B LED strip 144 LED/m IP65 (~1 m)", 1, 20, "Behind leg PETG diffuser channels."],
+  ["led-matrix-8x8", "P5", "Adafruit 1.2\" 8×8 RGB matrix LED Backpack (×8)", 8, 20, "Spider eye cluster on head gimbal."],
+  ["hud-1.69", "P5", "Waveshare 1.69\" round IPS LCD (ST7789)", 1, 18, "Dorsal HUD. SPI from Teensy."],
+  ["max98357a", "P5", "MAX98357A I²S amp breakout", 1, 6, "SFX speaker driver."],
+  ["speaker", "P5", "4 Ω 2 W speaker 28 mm", 1, 5, "Creature SFX. Under perforated carapace section."],
+  ["level-shift", "P5", "TXS0108E level shifter 3.3↔5 V (×2)", 2, 5, "WS2812B logic level interface."],
+
+  { section: "7 · Connectors, cabling, harness" },
+  ["lx224-cable-p0", "P0", "LX-224HV bus cables 3-pin (single leg)", 5, 1.5, "Pre-crimped Hiwonder. P0 + spares."],
+  ["lx224-cable-p1", "P1", "LX-224HV bus cables (remaining)", 25, 1.5, ""],
+  ["jst-xh", "P0", "JST-XH 2.54mm kit (on hand)", 1, 0, "On hand.", { onHand: true }],
+  ["jst-ph", "P0", "JST-PH 2.0mm kit (on hand)", 1, 0, "On hand.", { onHand: true }],
+  ["sleeving", "P5", "Braided cable sleeving 6 mm + 10 mm × 5 m ea", 1, 15, "Exposed cable run aesthetic."],
+  ["heat-shrink", "P0", "Heat shrink assortment (on hand)", 1, 0, "Assumed on hand.", { onHand: true }],
+  ["cable-glands", "P4", "M12 cable glands (chassis port-outs)", 4, 2, "Power + sensor bulkhead pass-throughs."],
+
+  { section: "8 · Tooling additions" },
+  ["bambu-printer", "P0", "Bambu Labs printer (on hand)", 1, 0, "Assumed on hand — verify model gates PA612-CF viability.", { onHand: true }],
+  ["dry-box", "P0", "Filament dry box w/ heater (Sunlu S4)", 1, 80, "Mandatory for PA612-CF. Buy if not on hand."],
+  ["lipo-alarm", "P1", "6S LiPo voltage alarm BB-ring (×2)", 2, 5, "Cell-imbalance audible alarm. Belt-and-suspenders to BMS."],
+  ["field-tarp", "P1", "Field tarp + LiPo-safe charging stand", 1, 30, "Outdoor charge/test station."],
+
+  { section: "9 · Programming/diagnostic accessories" },
+  ["lx224-programmer", "P0", "LX-224HV programmer cable (Hiwonder)", 1, 15, "Set servo IDs before chassis assembly. Critical for P0."],
+];
+
+const tbody = document.getElementById("bom-body");
+const state = SB ? SB.load() : {};
+
+function row(it) {
+  const [id, phase, part, qty, unit, why, opts={}] = it;
+  const ext = qty * unit;
+  const tr = document.createElement("tr");
+  tr.dataset.phase = phase;
+  if (opts.onHand) tr.classList.add("on-hand");
+  if (opts.rejected) tr.classList.add("rejected");
+  const phasePill = phase === "—" ? `<span class="pill" style="color:#5a6068">—</span>` :
+                    `<span class="phase-badge ${phase.toLowerCase()}">${phase}</span>`;
+  const verifyNote = opts.verify ? ` <span class="pill warn">verify</span>` : "";
+  const onHandNote = opts.onHand ? ` <span class="pill ok">on hand</span>` : "";
+  const optionalNote = opts.optional ? ` <span class="pill">optional</span>` : "";
+  const rejectedNote = opts.rejected ? ` <span class="pill danger">rejected</span>` : "";
+  tr.innerHTML = `
+    <td class="status-col">
+      <input type="checkbox" data-persist data-cost="${opts.rejected ? 0 : ext}" data-phase="${phase}" id="bom-${id}">
+    </td>
+    <td class="phase-col">${phasePill}</td>
+    <td class="part">${part}${verifyNote}${onHandNote}${optionalNote}${rejectedNote}</td>
+    <td class="qty">${qty || "—"}</td>
+    <td class="unit">${unit ? "$" + unit : "—"}</td>
+    <td class="ext">${ext && !opts.rejected ? "$" + ext.toFixed(0) : "—"}</td>
+    <td class="why">${why}</td>
+  `;
+  return tr;
+}
+
+BOM.forEach(it => {
+  if (it.section) {
+    const tr = document.createElement("tr");
+    tr.classList.add("section-row");
+    tr.innerHTML = `<td colspan="7">${it.section}</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+  tbody.appendChild(row(it));
+});
+
+// Filter
+const filterBtns = document.querySelectorAll(".filter-bar button[data-filter]");
+filterBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const f = btn.dataset.filter;
+    document.querySelectorAll("#bom-body tr").forEach(tr => {
+      if (tr.classList.contains("section-row")) { tr.style.display = ""; return; }
+      tr.style.display = (f === "all" || tr.dataset.phase === f) ? "" : "none";
+    });
+  });
+});
+
+document.getElementById("hide-onhand").addEventListener("change", e => {
+  document.querySelectorAll("#bom-body tr.on-hand").forEach(tr => tr.style.display = e.target.checked ? "none" : "");
+});
+document.getElementById("hide-rejected").addEventListener("change", e => {
+  document.querySelectorAll("#bom-body tr.rejected").forEach(tr => tr.style.display = e.target.checked ? "none" : "");
+});
+// initial: hide rejected
+document.querySelectorAll("#bom-body tr.rejected").forEach(tr => tr.style.display = "none");
+</script>
+</body>
+</html>

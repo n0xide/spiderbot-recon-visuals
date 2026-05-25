@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Safety card · spiderbot-recon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .hazard-card {
+    border-left: 4px solid var(--danger);
+    background: linear-gradient(90deg, rgba(208,74,58,0.04), transparent 30%);
+  }
+  .hazard-card.warn  { border-left-color: var(--warn);  background: linear-gradient(90deg, rgba(208,160,42,0.04), transparent 30%); }
+  .hazard-card.info  { border-left-color: var(--info);  background: linear-gradient(90deg, rgba(90,144,200,0.04), transparent 30%); }
+
+  .hazard-card h2 { color: var(--danger); }
+  .hazard-card.warn h2 { color: var(--warn); }
+  .hazard-card.info h2 { color: var(--info); }
+
+  .rule { display: flex; gap: 10px; padding: 6px 0; }
+  .rule .marker { color: var(--danger); font-weight: 700; flex-shrink: 0; }
+  .rule.warn  .marker { color: var(--warn); }
+  .rule.info  .marker { color: var(--info); }
+
+  .preflight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+
+  .emergency-panel {
+    background: linear-gradient(180deg, rgba(208,74,58,0.08), transparent);
+    border: 2px solid var(--danger);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin: 24px 0;
+  }
+  .emergency-panel h2 { color: var(--danger); border: none; padding: 0; margin: 0 0 12px; font-size: 18px; }
+</style>
+</head>
+<body data-ns="safety">
+
+<div class="shell">
+
+  <header class="topbar">
+    <h1><span class="accent">▶</span> SPIDERBOT-RECON <span class="dim">/ safety card</span></h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="phase-dashboard.html">Phases</a>
+      <a href="bom-tracker.html">BOM</a>
+      <a href="teensy-pinout.html">Pinout</a>
+      <a href="power-architecture.html">Power</a>
+      <a href="servo-bus-map.html">Servos</a>
+      <a href="ik-calculator.html">IK</a>
+      <a href="gait-visualizer.html">Gaits</a>
+      <a href="connector-pinouts.html">Conn</a>
+      <a href="calibration-checklist.html">Cal</a>
+      <a href="safety-card.html" class="active">Safety</a>
+    </nav>
+  </header>
+
+  <div class="banner danger">
+    <span class="banner-tag">Read every session</span>
+    <span>Every hazard here has injured or killed someone, somewhere. None are theoretical. Most are avoided with cheap precautions.</span>
+  </div>
+
+  <!-- Pre-power-on checklist -->
+  <h2 class="section">Pre-power-on checklist (every session)</h2>
+  <div class="preflight-grid">
+    <div class="card">
+      <h3>Battery</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-lipo-inspect"><span class="check-label">LiPo inspected · no puffing/swelling/scorch</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-lipo-bag"><span class="check-label">LiPo on non-flammable surface (concrete/tile/metal)</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-lipo-charge"><span class="check-label">Not charging unattended</span></label>
+    </div>
+    <div class="card">
+      <h3>Estop</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-estop-test"><span class="check-label">Estop pressed → tested · latches</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-estop-cuts"><span class="check-label">Estop cuts servo rail (verify on scope) within 50 ms</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-estop-reach"><span class="check-label">Estop reachable from where you're sitting/standing</span></label>
+    </div>
+    <div class="card">
+      <h3>Motion envelope</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-clear"><span class="check-label">Nothing in robot's reach envelope</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-mount"><span class="check-label">Robot bench-mounted or on walk-in-place stand</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-eye"><span class="check-label">Eye protection on for first power-on of session</span></label>
+    </div>
+    <div class="card">
+      <h3>Electrical</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-tools"><span class="check-label">Tool shanks taped near battery rail</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-xt60"><span class="check-label">Loose XT60 terminals capped</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-dps"><span class="check-label">First power-on this session: DPS-150 @ 1 A limit, not battery</span></label>
+    </div>
+    <div class="card">
+      <h3>ESD</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-esd-ground"><span class="check-label">Grounded (wrist strap / touched metal case)</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-esd-mat"><span class="check-label">ESD mat in use OR holding boards by edges only</span></label>
+    </div>
+    <div class="card">
+      <h3>Awareness</h3>
+      <label class="check"><input type="checkbox" data-persist id="pf-clothing"><span class="check-label">No loose clothing/hair/jewelry near robot</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-extinguisher"><span class="check-label">Class D extinguisher or metal bucket of sand nearby</span></label>
+      <label class="check"><input type="checkbox" data-persist id="pf-ventilation"><span class="check-label">Ventilation OK (especially printer running)</span></label>
+    </div>
+  </div>
+
+  <!-- ============================================ 6S LIPO -->
+  <section class="card hazard-card mt-4">
+    <h2>1 · 6S LiPo · the dominant fire risk</h2>
+    <p class="text-mute small">A 6S 8000 mAh pack contains <strong>180 kJ</strong> of stored energy — ~40 g of TNT, released over seconds if abused. LiPos burn at 1500+ °C, emit toxic smoke, and <em>cannot be extinguished with water</em>.</p>
+
+    <div class="rule"><span class="marker">▶</span><div><strong>Charge in a LiPo-safe bag, on non-flammable surface</strong> (concrete/tile/metal). Never bed/carpet/wood.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Never charge unattended.</strong> Set timer; check periodically.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Charge at 1C max</strong> for first 5 cycles (1C = capacity in amps; 8 Ah → 8 A max). Faster after break-in but stick to 1C if not in a hurry.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Storage voltage: 3.85 V/cell</strong> (23.1 V for 6S). Full-charge storage degrades + swells.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Inspect before every use.</strong> Puffing, soft spots, scorch, solvent smell → retire.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>A crashed pack is suspect.</strong> Quarantine 24 h on non-flammable surface. Monitor temp.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Class D extinguisher</strong> (lithium-rated) or metal bucket of <em>dry sand</em>. Water makes LiPo fires worse.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Dispose:</strong> discharge to ~3.0 V/cell, tape leads, battery recycler. Never in regular trash.</div></div>
+  </section>
+
+  <!-- ============================================ Servo motion -->
+  <section class="card hazard-card mt-4">
+    <h2>2 · Servo motion · pinch and impact</h2>
+    <p class="text-mute small">24 servos × 30 kg·cm × 100 mm leg leverage = ~3 kg clamping force at the foot, more at intermediate joints. <strong>The robot can break a finger.</strong></p>
+
+    <div class="rule"><span class="marker">▶</span><div><strong>Power-up:</strong> never have a hand inside the robot's reach envelope when applying battery power. The smart power-up sequence ([design.md §11.5]) helps — but a firmware bug can still cause unwanted motion.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Estop is your friend.</strong> Test before every bench session.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Bench-mount the robot.</strong> P0: clamp leg fixture. P1: low (10 cm) wooden block stand for initial gait. Lower to floor only when gait timing is debugged.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Walk-in-place stand</strong> for gait debugging: feet in air, gait runs, robot stays put. Eliminates ~90% of impact risk during dev.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Eye protection</strong> at first power-on. Servo gear failures occasionally throw plastic shards.</div></div>
+    <div class="rule"><span class="marker">▶</span><div><strong>Never reach between leg pairs while powered.</strong> Even "idle" — a network glitch can command sudden motion.</div></div>
+
+    <h3 class="section">Failure modes to plan for</h3>
+    <table class="data">
+      <thead><tr><th>Mode</th><th>Cause</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Runaway servo</td><td>Encoder fault → drives to limit</td><td>Firmware kills individual servo power if &gt;90% load &gt; 100 ms</td></tr>
+        <tr><td>Bus failure → all limp</td><td>Bus short</td><td>10 mm belly clearance pad — chassis doesn't slam electronics</td></tr>
+        <tr><td>Stall under gait</td><td>Terrain or fallen leg</td><td>Load-sensing detects stall, exits gait, holds pose</td></tr>
+        <tr><td>IMU lying</td><td>Bad reading → robot thinks level when tipped</td><td>Cross-check IMU vs per-leg IK consistency</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================ 24V electrical -->
+  <section class="card hazard-card warn mt-4">
+    <h2>3 · Electrical · 24 V isn't lethal but burns</h2>
+    <p class="text-mute small">Mains is dangerous to life; 24 V from a LiPo is not. <strong>But 24 V at 50 A welds metal.</strong> A dropped tool across the battery terminals heats to &gt;1000 °C and flash-burns whatever it touches.</p>
+
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Insulate your tools.</strong> Tape screwdriver shanks. Use snub-nose pliers with insulated grips.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>One hand rule.</strong> When probing live circuits with a meter, keep one hand in your pocket — accidents don't go across your chest.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Disconnect battery before any wiring change.</strong> Reconnect last.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Tinned wire tips, no fraying.</strong> A stray strand bridging rails will trip protection or weld.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Heat-shrink every solder joint</strong> on power wiring.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>FNIRSI DPS-150 first.</strong> Set 1 A limit for first power-on. If shorted/miswired, supply current-limits to safe value. Only when boot verified, connect battery.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Cap exposed XT60 terminals</strong> when not connected.</div></div>
+
+    <h3 class="section">Inrush current at first connection</h3>
+    <p class="text-mute small">Connecting charged battery to discharged cap bank = 100+ A momentary inrush. Spark at XT60, pitted contacts.</p>
+    <p class="text-mute small"><strong>Cheapest fix:</strong> XT90-S in series (built-in pre-charge resistor). Chassis-side keeps XT60 for compatibility with other LiPos.</p>
+  </section>
+
+  <!-- ============================================ ESD -->
+  <section class="card hazard-card info mt-4">
+    <h2>4 · ESD · the silent killer</h2>
+    <p class="text-mute small">Walking across carpet on a dry day → 5-15 kV static. Touching CMOS discharges this through the chip, can punch a hole in gate oxide. The chip might still work — or fail intermittently in a month, untraceably.</p>
+
+    <div class="rule info"><span class="marker">▶</span><div><strong>Ground yourself</strong> before touching boards. Touch a known-grounded metal surface (plugged-in computer case). Better: ESD wrist strap clipped to ground.</div></div>
+    <div class="rule info"><span class="marker">▶</span><div><strong>ESD mat</strong> if you can (~$30 with wrist strap).</div></div>
+    <div class="rule info"><span class="marker">▶</span><div><strong>Avoid touching pin headers and IC legs.</strong> Hold boards by edges.</div></div>
+    <div class="rule info"><span class="marker">▶</span><div><strong>Static-shielding bags</strong> for storage. Silver-foil bags &gt; pink/black anti-static. Reuse what components came in.</div></div>
+    <div class="rule info"><span class="marker">▶</span><div><strong>Humidity helps.</strong> &lt;30% RH (typical winter heated indoor) = high ESD risk. Humidifier substantially reduces it.</div></div>
+
+    <p class="text-mute small mt-2"><strong>ESD-sensitive on this build:</strong> Jetson Orin Nano, BNO086, RealSense, Lepton. Teensy and Pico are more forgiving but not immune.</p>
+  </section>
+
+  <!-- ============================================ 3D printing -->
+  <section class="card hazard-card warn mt-4">
+    <h2>5 · 3D printing · fumes, hot ends, sharp parts</h2>
+
+    <h3 class="section">Fumes</h3>
+    <p class="text-mute small">PA612-CF at 280-290 °C nozzle temp emits low concentrations of caprolactam, formaldehyde, other VOCs. Carbon fiber is bound in the polymer — won't aerosolize at print temp — but polymer breakdown products do.</p>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Print with enclosure closed</strong> (P1S / X1C / H2D have this; A1 / A1 Mini don't).</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Ventilate the print room.</strong> Open window, or vent printer to outdoors with 100 mm flex duct + small inline fan.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>HEPA / activated-carbon filter</strong> on enclosure if possible. X1C has one built in — check fresh.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Don't sleep in the same room while printing.</strong> Print in workshop or garage if possible.</div></div>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>N95 mask when sanding</strong> finished CF parts — carbon fiber dust is a respiratory hazard.</div></div>
+
+    <h3 class="section">Hot ends</h3>
+    <p class="text-mute small">Bambu hot end runs &gt; 280 °C for PA612-CF. Finger touch = serious burn, instant and deep.</p>
+    <div class="rule warn"><span class="marker">▶</span><div><strong>Wait for hot end &lt;50 °C</strong> before touching. Printer displays temperature.</div></div>
+  </section>
+
+  <!-- ============================================ Emergency -->
+  <div class="emergency-panel">
+    <h2>⚠ EMERGENCY · LiPo venting / smoking</h2>
+    <ol style="margin:8px 0;padding-left:24px;color:var(--text);line-height:1.7">
+      <li><strong>Get away.</strong> Do not breathe the smoke (HF and fluorinated compounds).</li>
+      <li>If safe, move it outdoors or into a metal container.</li>
+      <li><strong>Sand or Class D extinguisher</strong> to smother. <em>Not water.</em></li>
+      <li><strong>Do NOT pick up a smoking pack</strong> — even with gloves, the heat is severe.</li>
+      <li>Ventilate the area afterward.</li>
+    </ol>
+    <p class="text-mute small mt-2"><strong>Physical deformation of any cell</strong> = retire immediately. A small dent shorts internal layers. Don't try to "use it up."</p>
+  </div>
+
+  <!-- Phase-specific safety adds -->
+  <h2 class="section">Phase-specific safety adds</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>P0 · single leg</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>Bench supply, current limit 1 A initial → 5 A after smoke test</li>
+        <li>Single-leg fixture clamped to bench</li>
+        <li>No battery yet — DPS-150 only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>P1 · walk (first LiPo)</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li><strong>Read §1 LiPo rules again.</strong> First time handling 6S.</li>
+        <li>Charge LiPo from 0 to 100% under direct observation 3 times before unattended</li>
+        <li>Cap bank inrush — XT90-S anti-spark mandatory</li>
+        <li>Estop reachable from sitting position</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>P2 · see</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>ESD precautions when handling Jetson + RealSense + BNO086</li>
+        <li>Verify Buck #2 EN tied through Teensy — Jetson powers up only after safe-pose</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>P3 · map</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>Livox eye-safe Class 1 laser — but don't stare directly into the aperture</li>
+        <li>Vibration isolation on LiDAR mount — sensor failure if vibrating excessively</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>P4 · recon (field)</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>Conformal coat — spray outdoors / well-ventilated</li>
+        <li>LoRa: never transmit without antenna attached (RF energy back into PA destroys it)</li>
+        <li>915 MHz: legal in US, check local regs if traveling</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>P5 · polish</h3>
+      <ul class="text-mute small" style="margin:6px 0;padding-left:18px">
+        <li>WS2812B strips can pull &gt; 3 A when full white — verify rail headroom</li>
+        <li>Vinyl wrap: ventilate during heat-set</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Reset -->
+  <div class="row mt-4">
+    <button data-reset-ns>Reset pre-flight checklist</button>
+    <span class="text-mute small">Use at the start of each session.</span>
+  </div>
+
+  <footer class="footer">source: safety.md §1-§5 · this is not comprehensive — work safely beyond what's written here</footer>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>
